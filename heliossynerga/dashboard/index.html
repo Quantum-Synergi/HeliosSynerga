@@ -1,202 +1,374 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HeliosSynerga Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-body{
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #1e1e2f 0%, #2d2d44 100%);
-  color: white;
-  margin: 0;
-  padding: 20px;
-}
-
-h1{
-  color: #ffcc00;
-  text-align: center;
-  font-size: 2.5em;
-  margin-bottom: 30px;
-  text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
-}
-
-h2{
-  color: #ffcc00;
-  margin-top: 30px;
-  border-bottom: 2px solid #ffcc00;
-  padding-bottom: 10px;
-}
-
-.chart-container{
-  width: 90%;
-  max-width: 900px;
-  height: 400px;
-  margin: 20px auto;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 20px;
-  border-radius: 10px;
-  border: 1px solid #ffcc00;
-}
-
-table{
-  width: 90%;
-  max-width: 1000px;
-  margin: 20px auto;
-  border-collapse: collapse;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-td, th{
-  border: 1px solid #ffcc00;
-  padding: 12px;
-  text-align: left;
-}
-
-th{
-  background: rgba(255, 204, 0, 0.1);
-  font-weight: bold;
-  color: #ffcc00;
-}
-
-tr:hover{
-  background: rgba(255, 204, 0, 0.1);
-}
-
-.status{
-  text-align: center;
-  padding: 20px;
-  background: rgba(255, 204, 0, 0.1);
-  border-radius: 10px;
-  margin: 20px auto;
-  max-width: 600px;
-  border: 2px solid #ffcc00;
-}
-
-.status.active{
-  color: #00ff00;
-}
-
-.status.idle{
-  color: #ffaa00;
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐉 HeliosSynerga Bot Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1e1e2f 0%, #2a2a3e 100%);
+      color: #fff;
+      padding: 20px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      border-bottom: 3px solid #ffcc00;
+      padding-bottom: 20px;
+    }
+    h1 { font-size: 2.5em; color: #ffcc00; margin-bottom: 10px; }
+    .status {
+      font-size: 1.1em;
+      padding: 10px 20px;
+      background: #28a745;
+      border-radius: 5px;
+      display: inline-block;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .card {
+      background: #2a2a3e;
+      border: 2px solid #444;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    .card h2 {
+      color: #ffcc00;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #444;
+      padding-bottom: 10px;
+    }
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9em;
+    }
+    th, td {
+      border: 1px solid #444;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background: #1a1a2a;
+      color: #ffcc00;
+      font-weight: bold;
+    }
+    tr:nth-child(even) { background: #333342; }
+    tr:hover { background: #3a3a4e; }
+    .rank-1 { color: #ffd700; font-weight: bold; }
+    .rank-2 { color: #c0c0c0; font-weight: bold; }
+    .rank-3 { color: #cd7f32; font-weight: bold; }
+    .our-project { background: #2a4a2a; }
+    .phase-draft { color: #ffa500; }
+    .phase-submitted { color: #28a745; }
+    .phase-active { color: #00bfff; }
+    .scroll-table {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .full-width {
+      grid-column: 1 / -1;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .stat-box {
+      background: #1a1a2a;
+      padding: 15px;
+      border-radius: 5px;
+      text-align: center;
+    }
+    .stat-value { font-size: 1.8em; color: #ffcc00; font-weight: bold; }
+    .stat-label { font-size: 0.85em; color: #aaa; }
+    .tweets { 
+      background: #1a1a2a; 
+      padding: 10px; 
+      margin: 10px 0; 
+      border-left: 4px solid #ffcc00;
+      border-radius: 3px;
+    }
+    .tweet-text { font-size: 0.9em; line-height: 1.4; }
+  </style>
 </head>
 <body>
-<h1>🐉 HeliosSynerga Dashboard</h1>
 
-<div class="chart-container">
-  <canvas id="pnlChart"></canvas>
+<div class="header">
+  <h1>🐉 HeliosSynerga Autonomous Trading Bot</h1>
+  <p>Solana Colosseum Hackathon - Feb 2-12, 2026</p>
+  <div class="status" id="status">● RUNNING (Cycle: --)</div>
 </div>
 
-<h2>Portfolio Performance</h2>
-<table>
-  <tr><th>Strategy</th><th>Amount (SOL)</th><th>PnL</th><th>Timestamp</th></tr>
-  <tbody id="tradesTable"></tbody>
-</table>
+<div class="container">
 
-<h2>Forum Activity</h2>
-<table>
-  <tr><th>Post ID</th><th>Comment</th><th>Time</th></tr>
-  <tbody id="forumTable"></tbody>
-</table>
+  <!-- PROJECT STATUS -->
+  <div class="card">
+    <h2>📋 Project Status</h2>
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-label">Phase</div>
+        <div class="stat-value phase-draft" id="phase">DRAFT</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Rank</div>
+        <div class="stat-value" id="rank">--</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Votes</div>
+        <div class="stat-value" id="votes">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Score</div>
+        <div class="stat-value" id="score">0</div>
+      </div>
+    </div>
+    <div id="projectInfo" style="background: #1a1a2a; padding: 10px; border-radius: 5px; font-size: 0.9em;"></div>
+  </div>
 
-<div class="status active" id="status">✅ Connecting...</div>
+  <!-- TRADING PERFORMANCE -->
+  <div class="card">
+    <h2>💹 Trading Performance</h2>
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-label">Total Trades</div>
+        <div class="stat-value" id="tradeCount">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Total PnL</div>
+        <div class="stat-value" id="totalPnL">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Avg PnL</div>
+        <div class="stat-value" id="avgPnL">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Win Rate</div>
+        <div class="stat-value" id="winRate">0%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PNL CHART -->
+  <div class="card">
+    <h2>📊 PnL Over Time</h2>
+    <div class="chart-container">
+      <canvas id="pnlChart"></canvas>
+    </div>
+  </div>
+
+  <!-- STRATEGY BREAKDOWN -->
+  <div class="card">
+    <h2>🎯 Strategy Breakdown</h2>
+    <div class="chart-container">
+      <canvas id="strategyChart"></canvas>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="card full-width">
+    <h2>🥇 Leaderboard (Top 20)</h2>
+    <div class="scroll-table">
+      <table id="leaderboard">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Project</th>
+            <th>Agent</th>
+            <th>Score</th>
+            <th>Status</th>
+            <th>Tags</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardBody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- FORUM ACTIVITY -->
+  <div class="card">
+    <h2>💬 Forum Activity</h2>
+    <div class="scroll-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Content</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="forumTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TWITTER INTEGRATION -->
+  <div class="card">
+    <h2>🐦 Twitter Updates</h2>
+    <div id="tweets"></div>
+  </div>
+
+</div>
 
 <script>
-let chart = null;
+  let pnlChart, strategyChart;
+  let cycle = 0;
 
-async function fetchTrades(){
-  try {
-    const res = await fetch('http://localhost:4000/api/trades');
-    return await res.json();
-  } catch(e) {
-    console.error('Error fetching trades:', e);
-    return [];
-  }
-}
+  async function fetchData() {
+    try {
+      const trades = await fetch('/api/trades').then(r => r.json()).catch(() => []);
+      const forum = await fetch('/api/forum').then(r => r.json()).catch(() => []);
+      const projects = await fetch('/api/projects').then(r => r.json()).catch(() => []);
+      const leaderboard = await fetch('/api/leaderboard').then(r => r.json()).catch(() => []);
+      const status = await fetch('/api/status').then(r => r.json()).catch(() => ({}));
 
-async function fetchForum(){
-  try {
-    const res = await fetch('http://localhost:4000/api/forum');
-    return await res.json();
-  } catch(e) {
-    console.error('Error fetching forum:', e);
-    return [];
-  }
-}
+      renderProject(projects[0]);
+      renderTrades(trades);
+      renderForum(forum);
+      renderLeaderboard(leaderboard);
+      renderStatus(status);
 
-async function render(){
-  try {
-    const trades = await fetchTrades();
-    
-    // Update trades table
-    document.getElementById('tradesTable').innerHTML = trades
-      .map(t => `<tr><td>${t.strategy}</td><td>${t.amount}</td><td>${t.pnl}</td><td>${new Date(t.timestamp).toLocaleString()}</td></tr>`)
-      .join('');
-    
-    // Update chart
-    if(trades.length > 0) {
-      const labels = trades.map(t => new Date(t.timestamp).toLocaleTimeString());
-      const data = trades.map(t => parseFloat(t.pnl));
-      
-      if(chart) {
-        chart.data.labels = labels;
-        chart.data.datasets[0].data = data;
-        chart.update();
-      } else {
-        chart = new Chart(document.getElementById('pnlChart').getContext('2d'), {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'PnL (SOL)',
-              data: data,
-              borderColor: '#ffcc00',
-              backgroundColor: 'rgba(255, 204, 0, 0.1)',
-              fill: true,
-              tension: 0.4
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: {
-                ticks: { color: '#ffcc00' },
-                grid: { color: 'rgba(255, 204, 0, 0.1)' }
-              },
-              x: {
-                ticks: { color: '#ffcc00' },
-                grid: { color: 'rgba(255, 204, 0, 0.1)' }
-              }
-            }
-          }
-        });
-      }
+      cycle++;
+      document.getElementById('status').textContent = `● RUNNING (Cycle: ${cycle})`;
+    } catch (e) {
+      console.error('Fetch error:', e);
     }
-    
-    // Update forum table
-    const forum = await fetchForum();
-    document.getElementById('forumTable').innerHTML = forum
-      .map(f => `<tr><td>${f.postId}</td><td>${f.comment}</td><td>${new Date(f.timestamp).toLocaleString()}</td></tr>`)
-      .join('');
-    
-    // Update status
-    document.getElementById('status').textContent = '✅ HeliosSynerga Active - Last update: ' + new Date().toLocaleTimeString();
-    document.getElementById('status').className = 'status active';
-  } catch(e) {
-    document.getElementById('status').textContent = '⚠️ Waiting for bot API...';
-    document.getElementById('status').className = 'status idle';
   }
-}
 
-// Initial render and refresh every 5 seconds
-render();
-setInterval(render, 5000);
+  function renderProject(project) {
+    if (!project) return;
+    document.getElementById('phase').textContent = (project.phase || 'draft').toUpperCase();
+    document.getElementById('phase').className = `stat-value phase-${project.phase || 'draft'}`;
+    document.getElementById('rank').textContent = project.scoreboardRank || '--';
+    document.getElementById('projectInfo').innerHTML = `
+      <strong>${project.name}</strong><br>
+      <em>${project.description?.substring(0, 100)}...</em><br>
+      <small>Tags: ${project.tags || 'defi, ai, trading'}</small>
+    `;
+  }
+
+  function renderTrades(trades) {
+    const count = trades.length;
+    const totalPnL = trades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0).toFixed(4);
+    const avgPnL = count > 0 ? (totalPnL / count).toFixed(4) : 0;
+    const wins = trades.filter(t => parseFloat(t.pnl) > 0).length;
+    const winRate = count > 0 ? ((wins / count) * 100).toFixed(1) : 0;
+
+    document.getElementById('tradeCount').textContent = count;
+    document.getElementById('totalPnL').textContent = totalPnL;
+    document.getElementById('avgPnL').textContent = avgPnL;
+    document.getElementById('winRate').textContent = winRate + '%';
+
+    const last20 = trades.slice(0, 20).reverse();
+    const labels = last20.map((t, i) => `#${count - i}`);
+    const data = last20.map(t => parseFloat(t.pnl || 0));
+
+    if (pnlChart) pnlChart.destroy();
+    pnlChart = new Chart(document.getElementById('pnlChart').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'PnL (SOL)',
+          data,
+          borderColor: '#ffcc00',
+          backgroundColor: 'rgba(255, 204, 0, 0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 3,
+          pointBackgroundColor: '#ffcc00'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#fff' } } },
+        scales: {
+          y: { grid: { color: '#444' }, ticks: { color: '#fff' }, title: { display: true, text: 'PnL (SOL)' } },
+          x: { grid: { color: '#444' }, ticks: { color: '#fff' } }
+        }
+      }
+    });
+
+    // Strategy breakdown
+    const strategies = {};
+    trades.forEach(t => {
+      strategies[t.strategy] = (strategies[t.strategy] || 0) + 1;
+    });
+
+    if (strategyChart) strategyChart.destroy();
+    strategyChart = new Chart(document.getElementById('strategyChart').getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(strategies),
+        datasets: [{
+          data: Object.values(strategies),
+          backgroundColor: ['#ffcc00', '#ff6b6b', '#4ecdc4']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#fff' } } }
+      }
+    });
+  }
+
+  function renderForum(forum) {
+    const html = forum.slice(0, 10).map(f => `
+      <tr>
+        <td>${f.type}</td>
+        <td>${(f.content || '').substring(0, 50)}...</td>
+        <td>${new Date(f.createdAt).toLocaleTimeString()}</td>
+      </tr>
+    `).join('');
+    document.getElementById('forumTable').innerHTML = html;
+  }
+
+  function renderLeaderboard(leaderboard) {
+    const html = leaderboard.slice(0, 20).map((p, i) => {
+      const isOurs = p.author === 'HeliosSynerga';
+      const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+      return `
+        <tr class="${isOurs ? 'our-project' : ''} ${rankClass}">
+          <td>#${p.rank}</td>
+          <td><strong>${p.projectName}</strong></td>
+          <td>${p.author}</td>
+          <td>${p.score}</td>
+          <td>${p.status || 'draft'}</td>
+          <td><small>${p.tags || ''}</small></td>
+        </tr>
+      `;
+    }).join('');
+    document.getElementById('leaderboardBody').innerHTML = html;
+  }
+
+  function renderStatus(status) {
+    if (status.name) {
+      document.title = `${status.name} - Cycle ${cycle}`;
+    }
+  }
+
+  // Refresh every 5 seconds
+  fetchData();
+  setInterval(fetchData, 5000);
 </script>
+
 </body>
 </html>

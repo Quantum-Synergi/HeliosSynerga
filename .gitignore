@@ -32,3 +32,7 @@ build/
 *.tmp
 *.log
 *.out
+# Private deployment notes (for your eyes only)
+.github/.DEPLOYMENT_NOTES.sh
+.github/DEPLOYMENT_NOTES.md
+DEPLOYMENT_NOTES.sh
