@@ -1,6 +1,6 @@
-# 🐉 HeliosSynerga - Autonomous Hackathon 3 headed Trading Bot
+# 🐉 HeliosSynerga - Autonomous Hackathon Trading Bot
 
-**Three-headed AI focus: Arbitrage, Liquidity, Trend-following**
+**Three-headed AI focus: Arbitrage, Liquidity, Trend-following** 
 
 A 24/7 autonomous trading bot integrated with Solana, featuring:
 - **Automated Trading**: Real-time simulated trading with multiple strategies
@@ -38,7 +38,7 @@ A 24/7 autonomous trading bot integrated with Solana, featuring:
    COLOSSEUM_API_KEY=your_api_key_here
    CHATGPT_KEY=sk-your_openai_key_here
    RAILWAY_API_KEY=your_railway_api_key
-   GH_TOKEN=ghp_your_github_token
+   
    PORT=4000
    ```
 
