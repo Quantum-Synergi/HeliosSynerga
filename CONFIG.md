@@ -33,7 +33,7 @@ Detailed configuration and customization options for the HeliosSynerga trading b
 - **What it is**: GitHub Personal Access Token for repository operations
 - **Where to get it**: https://github.com/settings/tokens
 - **Format**: Starts with `ghp_`
-- **Example**: `GH_TOKEN=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`
+- **Example**: `GH_TOKEN=ghp_your_personal_token`
 - **Usage**: Repository access, branch management, workflow configuration
 - **Permissions**: Requires `repo` and `workflow` scopes
 - **Note**: Keep this token secure, never commit to repository

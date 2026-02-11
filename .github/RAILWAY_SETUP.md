@@ -60,7 +60,7 @@ Your HeliosSynerga bot has been updated to use **Railway** for deployment and in
 COLOSSEUM_API_KEY: (stored securely)
 CHATGPT_KEY: (stored securely)
 RAILWAY_API_KEY: tr_prod_... (or your Railway token)
-GH_TOKEN: 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
+GH_TOKEN: (your GitHub Personal Access Token)
 PORT: 4000 (default)
 ```
 
@@ -83,7 +83,7 @@ Click **New repository secret** for each:
    - Value: (your Railway API key from https://railway.app/dashboard/tokens)
 
 4. **GH_TOKEN**
-   - Value: `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` (your provided GitHub token)
+   - Value: (your GitHub Personal Access Token, format: ghp_...)
 
 5. **PORT** (Optional)
    - Value: `4000` (or your preferred port)
@@ -178,7 +178,7 @@ With Railway + GitHub integration, you can now:
 ## 🔒 Security Notes
 
 ⚠️ **Your GitHub Token**:
-- Starts with `ghp_` (provided: `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`)
+- Starts with `ghp_` (GitHub Personal Access Token)
 - **NEVER commit this to git**
 - **Only stored in GitHub Secrets**
 - Automatically masked in logs

@@ -31,7 +31,7 @@ Add these 4 secrets one by one:
 
 📌 Secret #4: GH_TOKEN
    Name:  GH_TOKEN
-   Value: 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
+   Value: (your GitHub Personal Access Token, starts with ghp_)
 
 ═══════════════════════════════════════════════════════════════
 
