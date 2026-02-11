@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HeliosSynerga Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body{
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #1e1e2f 0%, #2d2d44 100%);
+  color: white;
+  margin: 0;
+  padding: 20px;
+}
+
+h1{
+  color: #ffcc00;
+  text-align: center;
+  font-size: 2.5em;
+  margin-bottom: 30px;
+  text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+}
+
+h2{
+  color: #ffcc00;
+  margin-top: 30px;
+  border-bottom: 2px solid #ffcc00;
+  padding-bottom: 10px;
+}
+
+.chart-container{
+  width: 90%;
+  max-width: 900px;
+  height: 400px;
+  margin: 20px auto;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #ffcc00;
+}
+
+table{
+  width: 90%;
+  max-width: 1000px;
+  margin: 20px auto;
+  border-collapse: collapse;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+td, th{
+  border: 1px solid #ffcc00;
+  padding: 12px;
+  text-align: left;
+}
+
+th{
+  background: rgba(255, 204, 0, 0.1);
+  font-weight: bold;
+  color: #ffcc00;
+}
+
+tr:hover{
+  background: rgba(255, 204, 0, 0.1);
+}
+
+.status{
+  text-align: center;
+  padding: 20px;
+  background: rgba(255, 204, 0, 0.1);
+  border-radius: 10px;
+  margin: 20px auto;
+  max-width: 600px;
+  border: 2px solid #ffcc00;
+}
+
+.status.active{
+  color: #00ff00;
+}
+
+.status.idle{
+  color: #ffaa00;
+}
+</style>
+</head>
+<body>
+<h1>🐉 HeliosSynerga Dashboard</h1>
+
+<div class="chart-container">
+  <canvas id="pnlChart"></canvas>
+</div>
+
+<h2>Portfolio Performance</h2>
+<table>
+  <tr><th>Strategy</th><th>Amount (SOL)</th><th>PnL</th><th>Timestamp</th></tr>
+  <tbody id="tradesTable"></tbody>
+</table>
+
+<h2>Forum Activity</h2>
+<table>
+  <tr><th>Post ID</th><th>Comment</th><th>Time</th></tr>
+  <tbody id="forumTable"></tbody>
+</table>
+
+<div class="status active" id="status">✅ Connecting...</div>
+
+<script>
+let chart = null;
+
+async function fetchTrades(){
+  try {
+    const res = await fetch('http://localhost:4000/api/trades');
+    return await res.json();
+  } catch(e) {
+    console.error('Error fetching trades:', e);
+    return [];
+  }
+}
+
+async function fetchForum(){
+  try {
+    const res = await fetch('http://localhost:4000/api/forum');
+    return await res.json();
+  } catch(e) {
+    console.error('Error fetching forum:', e);
+    return [];
+  }
+}
+
+async function render(){
+  try {
+    const trades = await fetchTrades();
+    
+    // Update trades table
+    document.getElementById('tradesTable').innerHTML = trades
+      .map(t => `<tr><td>${t.strategy}</td><td>${t.amount}</td><td>${t.pnl}</td><td>${new Date(t.timestamp).toLocaleString()}</td></tr>`)
+      .join('');
+    
+    // Update chart
+    if(trades.length > 0) {
+      const labels = trades.map(t => new Date(t.timestamp).toLocaleTimeString());
+      const data = trades.map(t => parseFloat(t.pnl));
+      
+      if(chart) {
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = data;
+        chart.update();
+      } else {
+        chart = new Chart(document.getElementById('pnlChart').getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'PnL (SOL)',
+              data: data,
+              borderColor: '#ffcc00',
+              backgroundColor: 'rgba(255, 204, 0, 0.1)',
+              fill: true,
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                ticks: { color: '#ffcc00' },
+                grid: { color: 'rgba(255, 204, 0, 0.1)' }
+              },
+              x: {
+                ticks: { color: '#ffcc00' },
+                grid: { color: 'rgba(255, 204, 0, 0.1)' }
+              }
+            }
+          }
+        });
+      }
+    }
+    
+    // Update forum table
+    const forum = await fetchForum();
+    document.getElementById('forumTable').innerHTML = forum
+      .map(f => `<tr><td>${f.postId}</td><td>${f.comment}</td><td>${new Date(f.timestamp).toLocaleString()}</td></tr>`)
+      .join('');
+    
+    // Update status
+    document.getElementById('status').textContent = '✅ HeliosSynerga Active - Last update: ' + new Date().toLocaleTimeString();
+    document.getElementById('status').className = 'status active';
+  } catch(e) {
+    document.getElementById('status').textContent = '⚠️ Waiting for bot API...';
+    document.getElementById('status').className = 'status idle';
+  }
+}
+
+// Initial render and refresh every 5 seconds
+render();
+setInterval(render, 5000);
+</script>
+</body>
+</html>

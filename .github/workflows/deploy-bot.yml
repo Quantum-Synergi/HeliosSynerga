@@ -1,0 +1,53 @@
+name: 🐉 HeliosSynerga Bot Deployment
+
+on:
+  push:
+    branches: [ main, develop ]
+  schedule:
+    # Run bot 24/7 on a schedule (every 2 hours)
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 📦 Install Dependencies
+        run: npm install
+      
+      - name: 🔐 Create .env from Secrets
+        env:
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+          CHATGPT_KEY: ${{ secrets.CHATGPT_KEY }}
+          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          PORT: ${{ secrets.PORT || '4000' }}
+        run: |
+          cat > .env << EOF
+          COLOSSEUM_API_KEY=$COLOSSEUM_API_KEY
+          CHATGPT_KEY=$CHATGPT_KEY
+          RAILWAY_API_KEY=$RAILWAY_API_KEY
+          GH_TOKEN=$GH_TOKEN
+          PORT=$PORT
+          EOF
+          echo "✅ .env file created from GitHub secrets"
+      
+      - name: 🤖 Run Bot
+        env:
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+          CHATGPT_KEY: ${{ secrets.CHATGPT_KEY }}
+          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          PORT: ${{ secrets.PORT || '4000' }}
+        run: |
+          timeout 3600 node heliossynerga/backend/bot.js || true

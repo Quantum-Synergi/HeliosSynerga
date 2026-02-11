@@ -1,0 +1,57 @@
+name: 🚀 HeliosSynerga 24/7 Continuous Bot
+
+on:
+  schedule:
+    # Run every hour
+    - cron: '0 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+concurrency:
+  group: bot-run
+  cancel-in-progress: false
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v3
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: 📦 Install Dependencies
+        run: npm install
+      
+      - name: 🔐 Setup Environment
+        run: |
+          cat > .env << 'EOF'
+          COLOSSEUM_API_KEY=${{ secrets.COLOSSEUM_API_KEY }}
+          CHATGPT_KEY=${{ secrets.CHATGPT_KEY }}
+          RAILWAY_API_KEY=${{ secrets.RAILWAY_API_KEY }}
+          GH_TOKEN=${{ secrets.GH_TOKEN }}
+          PORT=${{ secrets.PORT || '4000' }}
+          EOF
+          echo "✅ Environment configured"
+      
+      - name: 🤖 Start Trading Bot
+        run: |
+          echo "🐉 Starting HeliosSynerga Bot..."
+          timeout 3300 node heliossynerga/backend/bot.js || EXIT_CODE=$?
+          if [ $EXIT_CODE -eq 124 ]; then
+            echo "⏱️ Bot completed cycle"
+          else
+            echo "❌ Bot exited with code: $EXIT_CODE"
+          fi
+        env:
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+          CHATGPT_KEY: ${{ secrets.CHATGPT_KEY }}
+          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          PORT: ${{ secrets.PORT || '4000' }}
