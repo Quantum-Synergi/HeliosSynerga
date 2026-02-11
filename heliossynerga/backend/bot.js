@@ -6,6 +6,8 @@ import OpenAI from 'openai';
 
 const API_KEY = process.env.COLOSSEUM_API_KEY || 'e641a1b669b5d45b7a417a03b720665a9c090b7055d5ee011a4509a6e21558ed';
 const CHATGPT_KEY = process.env.CHATGPT_KEY;
+const RAILWAY_API_KEY = process.env.RAILWAY_API_KEY;
+const GH_TOKEN = process.env.GH_TOKEN;
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
 const TWITTER_ACCESS_TOKEN = process.env.TWITTER_ACCESS_TOKEN;
@@ -89,7 +91,12 @@ const colosseum = axios.create({
   }
 });
 
-const openai = new OpenAI({ apiKey: CHATGPT_KEY });
+let openai = null;
+if (CHATGPT_KEY) {
+  openai = new OpenAI({ apiKey: CHATGPT_KEY });
+} else {
+  console.warn('⚠️ CHATGPT_KEY not provided - AI decision engine will be disabled');
+}
 
 // ═══════════════════════════════════════════════════════════════
 // 1. COMPETITION PROJECT BUILDING
@@ -351,6 +358,16 @@ async function executeTrade(strategy, amount) {
 
 async function chatGPTStrategy() {
   try {
+    if (!openai) {
+      console.log('ℹ️ OpenAI not configured - using fallback strategy');
+      return {
+        nextTrade: { strategy: ['arbitrage', 'liquidity', 'trend'][Math.floor(Math.random() * 3)], amount: 0.05 },
+        projectPhase: 'submit',
+        twitterMessage: 'Autonomous trading active on Solana 🚀',
+        reasoning: 'Fallback strategy mode (CHATGPT_KEY not configured)'
+      };
+    }
+
     const trades = await new Promise(res => 
       db.all("SELECT * FROM trades ORDER BY timestamp DESC LIMIT 10", (_, rows) => res(rows || []))
     );
@@ -383,6 +400,12 @@ Provide JSON response with:
     return decision;
   } catch (e) {
     console.error('❌ ChatGPT error:', e.message);
+    return {
+      nextTrade: { strategy: 'trend', amount: 0.05 },
+      projectPhase: 'submit',
+      twitterMessage: 'Trading active 📈',
+      reasoning: 'Error fallback'
+    };
   }
 }
 
