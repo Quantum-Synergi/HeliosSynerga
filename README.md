@@ -1,6 +1,6 @@
-# 🐉 HeliosSynerga - Autonomous Trading Dragon
+# 🐉 HeliosSynerga - Autonomous Hackathon 3 headed Trading Bot
 
-**Three-headed AI trading beast: Arbitrage, Liquidity, Trend-following**
+**Three-headed AI focus: Arbitrage, Liquidity, Trend-following**
 
 A 24/7 autonomous trading bot integrated with Solana, featuring:
 - **Automated Trading**: Real-time simulated trading with multiple strategies
