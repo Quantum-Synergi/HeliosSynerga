@@ -1107,7 +1107,7 @@
         })
       ]);
 
-      const votes = Number(votesPayload?.votes || 0);
+      const votes = Number(votesPayload?.totalVotes ?? votesPayload?.votes ?? 0);
       const apiSource = votesPayload?.source || 'unknown';
       const degraded = Boolean(votesPayload?.error);
       const livePositions = Array.isArray(livePositionsPayload?.items)
