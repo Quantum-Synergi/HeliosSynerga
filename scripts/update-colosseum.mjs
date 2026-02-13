@@ -32,6 +32,7 @@ const LIVE_DEMO = resolveLiveDemoUrl();
 const GITHUB_URL = 'https://github.com/Quantum-Synergi/HeliosSynerga';
 const DESCRIPTION = 'HeliosSynerga is an autonomous Solana trading system that executes disciplined BTC/SOL strategy cycles with risk controls, continuous telemetry, and transparent operational reporting. It is designed for reliable 24/7 decision support and measurable execution quality in live market conditions. Colosseum Project ID: 621.';
 const MINIMAL_SOLANA_TEXT = 'Integration details are intentionally minimal in this submission; implementation is documented in the public GitHub repository.';
+const CATEGORY_TAGS = ['ai', 'defi', 'trading'];
 const UPDATE_SOURCE = 'workflow-push';
 
 function sleep(ms) {
@@ -77,9 +78,7 @@ async function run() {
     repoLink: GITHUB_URL,
     github: GITHUB_URL,
     solanaIntegration: MINIMAL_SOLANA_TEXT,
-    tags: Array.isArray(currentProject.tags) && currentProject.tags.length
-      ? currentProject.tags.slice(0, 3)
-      : ['defi', 'ai', 'trading']
+    tags: CATEGORY_TAGS
   };
 
   delete payload.id;
