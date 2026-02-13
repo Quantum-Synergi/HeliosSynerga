@@ -7,6 +7,7 @@ const API_BASE = 'https://agents.colosseum.com/api';
 const LIVE_DEMO = 'https://literate-adventure-97vxgq6rjjvp379v4-4010.app.github.dev/';
 const GITHUB_URL = 'https://github.com/Quantum-Synergi/HeliosSynerga';
 const DESCRIPTION = 'Autonomous institutional trading agent executing BTC/SOL strategies with enterprise-grade analytics dashboard. Real-time P&L tracking, risk management, and transparent decision logging via Node.js + Solana web3.js. Production-ready architecture built 100% by AI.';
+const MINIMAL_SOLANA_TEXT = 'Integration details are intentionally minimal in this submission; implementation is documented in the public GitHub repository.';
 
 if (!API_KEY) {
   console.error('❌ Missing COLOSSEUM_API_KEY');
@@ -38,7 +39,7 @@ async function run() {
     liveDemo: LIVE_DEMO,
     repoLink: GITHUB_URL,
     github: GITHUB_URL,
-    solanaIntegration: '',
+    solanaIntegration: MINIMAL_SOLANA_TEXT,
     tags: Array.isArray(currentProject.tags) && currentProject.tags.length
       ? currentProject.tags.slice(0, 3)
       : ['defi', 'ai', 'trading']
