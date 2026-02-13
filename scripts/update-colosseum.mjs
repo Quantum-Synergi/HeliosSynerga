@@ -30,7 +30,7 @@ function resolveLiveDemoUrl() {
 
 const LIVE_DEMO = resolveLiveDemoUrl();
 const GITHUB_URL = 'https://github.com/Quantum-Synergi/HeliosSynerga';
-const DESCRIPTION = 'Autonomous AI trading agent executing BTC/SOL-oriented strategy cycles with risk management, live telemetry, and continuous decisioning.';
+const DESCRIPTION = 'Autonomous AI trading agent executing BTC/SOL-oriented strategy cycles with risk management, live telemetry, and continuous decisioning. Colosseum Project ID: 621.';
 const MINIMAL_SOLANA_TEXT = 'Integration details are intentionally minimal in this submission; implementation is documented in the public GitHub repository.';
 const UPDATE_SOURCE = 'workflow-push';
 
