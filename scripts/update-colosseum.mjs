@@ -10,6 +10,18 @@ const DESCRIPTION = 'Autonomous institutional trading agent executing BTC/SOL st
 const MINIMAL_SOLANA_TEXT = 'Integration details are intentionally minimal in this submission; implementation is documented in the public GitHub repository.';
 const UPDATE_SOURCE = 'workflow-push';
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function shouldRetry(error) {
+  const status = Number(error?.response?.status || 0);
+  const message = String(error?.response?.data?.error || error?.message || '').toLowerCase();
+
+  if (status === 429 || status === 503) return true;
+  return message.includes('too many project operations') || message.includes('try again later');
+}
+
 if (!API_KEY) {
   console.error('❌ Missing COLOSSEUM_API_KEY');
   process.exit(1);
@@ -56,7 +68,24 @@ async function run() {
   delete payload.agentName;
   delete payload.status;
 
-  const response = await client.put('/my-project', payload);
+  let response = null;
+  const maxAttempts = 6;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      response = await client.put('/my-project', payload);
+      break;
+    } catch (error) {
+      if (!shouldRetry(error) || attempt === maxAttempts) {
+        throw error;
+      }
+
+      const waitMs = attempt * 15000;
+      console.log(`⏳ Colosseum throttle detected, retrying in ${Math.round(waitMs / 1000)}s (attempt ${attempt}/${maxAttempts})...`);
+      await sleep(waitMs);
+    }
+  }
+
   const updated = response.data?.project || {};
 
   console.log('✅ Colosseum project updated successfully');
