@@ -216,7 +216,7 @@
 
     .bottom-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 1rem;
       min-height: 0;
     }
@@ -495,23 +495,6 @@
                 </tr>
               </thead>
               <tbody id="positionsBody"></tbody>
-            </table>
-          </div>
-        </article>
-
-        <article class="table-card glass-panel">
-          <h3 class="table-title">Activity</h3>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Reference</th>
-                  <th>Content</th>
-                  <th>Time</th>
-                </tr>
-              </thead>
-              <tbody id="activityBody"></tbody>
             </table>
           </div>
         </article>
@@ -984,28 +967,6 @@
       `;
     }
 
-    function renderActivity(activityRows) {
-      const rows = activityRows.slice(0, 20).map((item) => {
-        const reference = item.postId || item.commentId || '-';
-        const content = String(item.content || '-').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const time = new Date(item.createdAt).toLocaleTimeString();
-        return `
-          <tr>
-            <td>${item.type || '-'}</td>
-            <td>${reference}</td>
-            <td>${content.slice(0, 72)}</td>
-            <td>${time}</td>
-          </tr>
-        `;
-      }).join('');
-
-      document.getElementById('activityBody').innerHTML = rows || `
-        <tr>
-          <td colspan="4" style="color:#98a2b8;">No activity captured yet.</td>
-        </tr>
-      `;
-    }
-
     function renderMetrics(trades, votes, walletStats) {
       const totalTrades = trades.length;
       const totalPnL = trades.reduce((sum, trade) => sum + Number(trade.pnl || 0), 0);
@@ -1042,11 +1003,10 @@
     }
 
     async function refreshDashboard() {
-      const [trades, livePositionsPayload, votesPayload, activityPayload, heartbeatPayload, walletStatsPayload, pnlSeriesPayload, tradingSettingsPayload] = await Promise.all([
+      const [trades, livePositionsPayload, votesPayload, heartbeatPayload, walletStatsPayload, pnlSeriesPayload, tradingSettingsPayload] = await Promise.all([
         fetchJson('/api/trades', []),
         fetchJson('/api/positions-live', { items: [] }),
         fetchJson('/api/colosseum-votes', { votes: 0 }),
-        fetchJson('/api/activity', { items: [] }),
         fetchJson('/api/heartbeat', { ok: false }),
         fetchJson('/api/wallet-stats', {
           virtualWallet: {
@@ -1072,15 +1032,9 @@
       const livePositions = Array.isArray(livePositionsPayload?.items)
         ? livePositionsPayload.items
         : [];
-      const activityRows = Array.isArray(activityPayload)
-        ? activityPayload
-        : Array.isArray(activityPayload?.items)
-          ? activityPayload.items
-          : [];
 
       renderMetrics(trades, votes, walletStatsPayload);
       renderPositions(livePositions);
-      renderActivity(activityRows);
 
       const btcCandles = buildCandlesFromTrades(trades, 'BTCUSDT');
       const solCandles = buildCandlesFromTrades(trades, 'SOLUSDT');
