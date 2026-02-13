@@ -13,7 +13,8 @@
     "doctor:env": "node scripts/env-doctor.mjs",
     "audit:colosseum": "node scripts/colosseum-audit.mjs",
     "precheck:submit": "node scripts/pre-submit-check.mjs",
-    "hotfix:project-fields": "node scripts/project-fields-hotfix.mjs"
+    "hotfix:project-fields": "node scripts/project-fields-hotfix.mjs",
+    "update-colosseum": "node scripts/update-colosseum.mjs"
   },
   "keywords": [
     "trading",

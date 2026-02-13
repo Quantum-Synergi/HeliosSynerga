@@ -3,24 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QANTUMSYNERGI Enterprise Trading Terminal</title>
+  <title>Helios Synerga | LIVE Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg0: #0a0e1a;
-      --bg1: #1a1f2e;
-      --panel: rgba(26, 31, 46, 0.9);
-      --panel-soft: rgba(20, 24, 36, 0.75);
-      --border: rgba(255, 255, 255, 0.1);
-      --text: #e8edf7;
-      --muted: #93a0b8;
-      --accent: #4dd4a0;
-      --danger: #ff5f6d;
-      --warn: #f7b955;
-      --shadow: 0 32px 64px rgba(0, 0, 0, 0.4);
-      --radius: 16px;
+      --cruip-bg: #0b0e1b;
+      --cruip-card: rgba(15, 23, 43, 0.75);
+      --cruip-glass: rgba(255, 255, 255, 0.03);
+      --cruip-border: rgba(255, 255, 255, 0.08);
+      --cruip-text: #e6eaf2;
+      --cruip-muted: #98a2b8;
+      --cruip-green: #2dd4bf;
+      --cruip-red: #fb7185;
+      --cruip-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      --radius-xl: 20px;
+      --radius-lg: 16px;
     }
 
     * {
@@ -31,341 +30,441 @@
 
     html,
     body {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 100%);
-      color: var(--text);
+      min-height: 100%;
+      background: radial-gradient(circle at 15% 10%, #1a2444 0%, var(--cruip-bg) 40%, #080b14 100%);
+      color: var(--cruip-text);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
-    .trading-terminal {
+    .dashboard {
+      min-height: 100vh;
       display: grid;
-      grid-template-areas:
-        "header header"
-        "charts charts"
-        "metrics positions";
-      grid-template-columns: 3fr 4fr;
-      grid-template-rows: 80px 70vh minmax(220px, 1fr);
-      height: 100vh;
-      gap: 24px;
-      padding: 24px;
+      grid-template-rows: auto 1fr auto;
+      gap: 2rem;
+      padding: 1.5rem;
     }
 
-    .glass {
+    .glass-panel {
+      background: var(--cruip-card);
+      border: 1px solid var(--cruip-border);
+      border-radius: var(--radius-xl);
       backdrop-filter: blur(20px);
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
+      box-shadow: var(--cruip-shadow);
     }
 
     .header {
-      grid-area: header;
-      position: sticky;
-      top: 0;
-      z-index: 10;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 18px 24px;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      flex-wrap: wrap;
     }
 
-    .brand {
+    .header-brand {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 0.75rem;
       font-weight: 800;
-      letter-spacing: 0.4px;
-      font-size: 22px;
+      letter-spacing: 0.02em;
+      font-size: 1.1rem;
+    }
+
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border: 1px solid rgba(45, 212, 191, 0.45);
+      color: #99f6e4;
+      border-radius: 999px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(45, 212, 191, 0.08);
     }
 
     .live-dot {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 999px;
-      background: var(--accent);
-      box-shadow: 0 0 0 8px rgba(77, 212, 160, 0.14);
+      background: var(--cruip-green);
+      box-shadow: 0 0 0 8px rgba(45, 212, 191, 0.12);
     }
 
-    .header-metrics {
+    .header-stats {
       display: flex;
       align-items: center;
-      gap: 28px;
-      font-weight: 600;
+      gap: 1rem;
+      flex-wrap: wrap;
     }
 
-    .header-metrics span {
-      color: var(--muted);
-      font-size: 12px;
+    .header-stat {
+      min-width: 150px;
+      padding: 0.55rem 0.75rem;
+      border-radius: 12px;
+      border: 1px solid var(--cruip-border);
+      background: var(--cruip-glass);
+    }
+
+    .label {
+      color: var(--cruip-muted);
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      display: block;
-      margin-bottom: 3px;
+      font-size: 0.66rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
     }
 
-    .header-metrics strong {
-      font-size: 22px;
-      color: var(--text);
+    .header-value {
       font-weight: 800;
+      font-size: 1.15rem;
+      line-height: 1;
     }
 
-    .charts {
-      grid-area: charts;
+    .main-grid {
+      display: grid;
+      grid-template-rows: minmax(420px, 50%) minmax(260px, 25%) minmax(260px, 25%);
+      gap: 1.25rem;
+      min-height: 0;
+    }
+
+    .charts-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 24px;
+      gap: 1.25rem;
+      min-height: 0;
     }
 
-    .chart-panel {
-      padding: 16px;
+    .chart-card {
+      background: var(--cruip-card);
+      border-radius: var(--radius-xl);
+      backdrop-filter: blur(20px);
+      box-shadow: var(--cruip-shadow);
+      border: 1px solid var(--cruip-border);
       display: flex;
       flex-direction: column;
-      background: #0f141f;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
+      padding: 0.95rem;
+      min-height: 0;
     }
 
     .chart-head {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      gap: 0.5rem;
+    }
+
+    .chart-title {
+      font-size: 0.9rem;
       font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
     }
 
-    .chart-head small {
-      color: var(--muted);
+    .chart-subtitle {
+      color: var(--cruip-muted);
+      font-size: 0.72rem;
       font-weight: 500;
-      font-size: 12px;
     }
 
-    canvas {
+    .chart-canvas-wrap {
+      height: 400px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+      background: #0d1222;
+    }
+
+    .chart-canvas-wrap canvas {
       width: 100%;
       height: 100%;
-      border-radius: 12px;
-      background: #0f141f;
+      display: block;
     }
 
-    .metrics {
-      grid-area: metrics;
+    .metrics-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      align-content: start;
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      gap: 0.85rem;
     }
 
     .metric-card {
+      background: var(--cruip-card);
+      border: 1px solid var(--cruip-border);
+      border-radius: var(--radius-lg);
       backdrop-filter: blur(20px);
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      min-height: 118px;
+      box-shadow: var(--cruip-shadow);
+      padding: 0.85rem;
+      min-height: 112px;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.28);
+      transition: transform 0.2s ease;
     }
 
-    .metric-label {
-      color: var(--muted);
-      font-size: 11px;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-      font-weight: 600;
+    .metric-card:hover {
+      transform: translateY(-4px);
     }
 
     .metric-value {
-      font-size: clamp(28px, 4vw, 36px);
+      font-size: clamp(1.05rem, 1.8vw, 1.6rem);
       font-weight: 800;
-      line-height: 1;
+      line-height: 1.1;
     }
 
-    .positions {
-      grid-area: positions;
-      padding: 14px;
-      overflow: hidden;
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      min-height: 0;
     }
 
-    .positions h3 {
-      font-size: 14px;
+    .table-card {
+      padding: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .table-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--cruip-muted);
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 10px;
-      font-weight: 700;
+      margin-bottom: 0.65rem;
+    }
+
+    .table-wrap {
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      background: rgba(11, 16, 32, 0.7);
+      overflow: auto;
+      flex: 1;
+      min-height: 190px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
-      overflow: hidden;
+      font-size: 0.76rem;
     }
 
     th,
     td {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      padding: 10px 8px;
       text-align: left;
+      padding: 0.55rem 0.55rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       white-space: nowrap;
     }
 
     th {
-      color: var(--muted);
-      font-weight: 600;
-      font-size: 11px;
+      color: var(--cruip-muted);
+      font-size: 0.63rem;
       text-transform: uppercase;
       letter-spacing: 0.07em;
       position: sticky;
       top: 0;
-      background: rgba(15, 20, 31, 0.92);
+      background: rgba(8, 12, 24, 0.96);
+      z-index: 1;
     }
 
-    .table-wrap {
-      max-height: 100%;
-      overflow: auto;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      background: rgba(15, 20, 31, 0.5);
-    }
+    .pnl-pos { color: var(--cruip-green); }
+    .pnl-neg { color: var(--cruip-red); }
 
-    .pnl-pos { color: var(--accent); font-weight: 700; }
-    .pnl-neg { color: var(--danger); font-weight: 700; }
     .status-pill {
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 999px;
-      padding: 2px 8px;
-      font-size: 11px;
-      color: #d6deef;
       display: inline-block;
+      border-radius: 999px;
+      border: 1px solid var(--cruip-border);
+      padding: 0.15rem 0.48rem;
+      font-size: 0.64rem;
+      color: #cfd7e8;
+      background: rgba(255, 255, 255, 0.03);
     }
 
-    .muted {
-      color: var(--muted);
-      font-size: 12px;
+    .footer {
+      text-align: center;
+      color: var(--cruip-muted);
+      font-size: 0.78rem;
+      padding-bottom: 0.5rem;
     }
 
-    @media (max-width: 1100px) {
-      .trading-terminal {
-        grid-template-areas:
-          "header"
-          "charts"
-          "metrics"
-          "positions";
+    .footer a {
+      color: #b8c3dc;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 1280px) {
+      .metrics-grid {
+        grid-template-columns: repeat(3, minmax(130px, 1fr));
+      }
+
+      .main-grid {
+        grid-template-rows: auto auto auto;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .dashboard {
+        padding: 1rem;
+        gap: 1rem;
+      }
+
+      .charts-grid,
+      .bottom-grid {
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto 1fr;
-        height: auto;
-        min-height: 100vh;
       }
 
-      .charts {
-        grid-template-columns: 1fr;
+      .chart-canvas-wrap {
+        height: 320px;
       }
 
-      .chart-panel {
-        min-height: 320px;
+      .metrics-grid {
+        grid-template-columns: repeat(2, minmax(130px, 1fr));
       }
 
-      .metrics {
-        grid-template-columns: 1fr 1fr;
+      .header-stat {
+        min-width: 130px;
       }
     }
 
-    @media (max-width: 700px) {
+    @media (max-width: 620px) {
       .header {
-        flex-direction: column;
         align-items: flex-start;
-        gap: 10px;
       }
 
-      .header-metrics {
-        gap: 16px;
+      .header-stats {
+        width: 100%;
       }
 
-      .metrics {
+      .header-stat {
+        width: 100%;
+      }
+
+      .metrics-grid {
         grid-template-columns: 1fr;
       }
     }
   </style>
 </head>
 <body>
-  <main class="trading-terminal">
-    <header class="header glass">
-      <div class="brand">
-        <span>QANTUMSYNERGI</span>
-        <span class="live-dot"></span>
-        <span class="muted">LIVE</span>
+  <main class="dashboard">
+    <header class="header glass-panel">
+      <div class="header-brand">
+        <span>Helios Synerga</span>
+        <span class="live-pill"><span class="live-dot"></span>LIVE</span>
       </div>
-      <div class="header-metrics">
-        <div>
-          <span>Total PnL</span>
-          <strong id="headerPnL">0.0000 SOL</strong>
+      <div class="header-stats">
+        <div class="header-stat">
+          <div class="label">Real P&amp;L</div>
+          <div id="headerPnL" class="header-value">+0.0000 SOL</div>
         </div>
-        <div>
-          <span>Win Rate</span>
-          <strong id="headerWinRate">0.0%</strong>
+        <div class="header-stat">
+          <div class="label">Real Votes</div>
+          <div id="headerVotes" class="header-value">0</div>
         </div>
       </div>
     </header>
 
-    <section class="charts">
-      <article class="chart-panel">
-        <div class="chart-head">
-          <div>BTCUSDT</div>
-          <small>Candlestick-style from real bot trade ticks</small>
-        </div>
-        <canvas id="btcChart"></canvas>
-      </article>
-      <article class="chart-panel">
-        <div class="chart-head">
-          <div>SOLUSDT</div>
-          <small>Candlestick-style from real bot trade ticks</small>
-        </div>
-        <canvas id="solChart"></canvas>
-      </article>
+    <section class="main-grid">
+      <section class="charts-grid">
+        <article class="chart-card">
+          <div class="chart-head">
+            <div class="chart-title">BTCUSDT</div>
+            <div class="chart-subtitle">Real trade ticks</div>
+          </div>
+          <div class="chart-canvas-wrap">
+            <canvas id="btcChart"></canvas>
+          </div>
+        </article>
+        <article class="chart-card">
+          <div class="chart-head">
+            <div class="chart-title">SOLUSDT</div>
+            <div class="chart-subtitle">Real trade ticks</div>
+          </div>
+          <div class="chart-canvas-wrap">
+            <canvas id="solChart"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <section class="metrics-grid">
+        <article class="metric-card">
+          <div class="label">PnL</div>
+          <div id="cardPnL" class="metric-value">+0.0000 SOL</div>
+        </article>
+        <article class="metric-card">
+          <div class="label">Win Rate</div>
+          <div id="cardWinRate" class="metric-value">0.0%</div>
+        </article>
+        <article class="metric-card">
+          <div class="label">Sharpe</div>
+          <div id="cardSharpe" class="metric-value">0.00</div>
+        </article>
+        <article class="metric-card">
+          <div class="label">Total Trades</div>
+          <div id="cardTotalTrades" class="metric-value">0</div>
+        </article>
+        <article class="metric-card">
+          <div class="label">Winning Trades</div>
+          <div id="cardWinningTrades" class="metric-value">0</div>
+        </article>
+        <article class="metric-card">
+          <div class="label">Vote Count</div>
+          <div id="cardVotes" class="metric-value">0</div>
+        </article>
+      </section>
+
+      <section class="bottom-grid">
+        <article class="table-card glass-panel">
+          <h3 class="table-title">Positions</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Symbol</th>
+                  <th>Strategy</th>
+                  <th>Size</th>
+                  <th>PnL</th>
+                  <th>Status</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody id="positionsBody"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="table-card glass-panel">
+          <h3 class="table-title">Activity</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Reference</th>
+                  <th>Content</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody id="activityBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
     </section>
 
-    <section class="metrics">
-      <article class="metric-card">
-        <div class="metric-label">PnL</div>
-        <div id="cardPnL" class="metric-value">0.0000</div>
-      </article>
-      <article class="metric-card">
-        <div class="metric-label">Win Rate</div>
-        <div id="cardWinRate" class="metric-value">0.0%</div>
-      </article>
-      <article class="metric-card">
-        <div class="metric-label">Sharpe</div>
-        <div id="cardSharpe" class="metric-value">0.00</div>
-      </article>
-      <article class="metric-card">
-        <div class="metric-label">Vote Count</div>
-        <div id="cardVotes" class="metric-value">0</div>
-      </article>
-    </section>
-
-    <section class="positions glass">
-      <h3>My Open Trades / Positions (Real Feed)</h3>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Symbol</th>
-              <th>Strategy</th>
-              <th>Size (SOL)</th>
-              <th>PnL</th>
-              <th>Status</th>
-              <th>Time</th>
-            </tr>
-          </thead>
-          <tbody id="positionsBody"></tbody>
-        </table>
-      </div>
-    </section>
+    <footer class="footer">
+      Technical details:
+      <a href="https://github.com/Quantum-Synergi/HeliosSynerga" target="_blank" rel="noopener noreferrer">https://github.com/Quantum-Synergi/HeliosSynerga</a>
+    </footer>
   </main>
 
   <script>
@@ -377,23 +476,22 @@
 
     function computeSharpe(trades) {
       if (!trades.length) return 0;
-      const returns = trades.map(t => Number(t.pnl || 0));
-      const mean = returns.reduce((sum, x) => sum + x, 0) / returns.length;
-      const variance = returns.reduce((sum, x) => sum + ((x - mean) ** 2), 0) / returns.length;
+      const returns = trades.map((trade) => Number(trade.pnl || 0));
+      const mean = returns.reduce((sum, value) => sum + value, 0) / returns.length;
+      const variance = returns.reduce((sum, value) => sum + ((value - mean) ** 2), 0) / returns.length;
       const stdDev = Math.sqrt(variance);
-      if (stdDev === 0) return 0;
+      if (!stdDev) return 0;
       return (mean / stdDev) * Math.sqrt(returns.length);
     }
 
     function mapSymbol(strategy) {
-      if (strategy === 'liquidity') return 'SOLUSDT';
-      return 'BTCUSDT';
+      return strategy === 'liquidity' ? 'SOLUSDT' : 'BTCUSDT';
     }
 
     function buildCandlesFromTrades(trades, symbol) {
       const strategyFilter = symbol === 'SOLUSDT'
-        ? t => t.strategy === 'liquidity'
-        : t => t.strategy !== 'liquidity';
+        ? (trade) => trade.strategy === 'liquidity'
+        : (trade) => trade.strategy !== 'liquidity';
 
       const selected = trades
         .filter(strategyFilter)
@@ -414,12 +512,12 @@
 
       const candles = [];
       const step = 3;
-      for (let i = 0; i < points.length; i += step) {
-        const slice = points.slice(i, i + step);
+      for (let index = 0; index < points.length; index += step) {
+        const slice = points.slice(index, index + step);
         const open = slice[0].y;
         const close = slice[slice.length - 1].y;
-        const high = Math.max(...slice.map(s => s.y));
-        const low = Math.min(...slice.map(s => s.y));
+        const high = Math.max(...slice.map((entry) => entry.y));
+        const low = Math.min(...slice.map((entry) => entry.y));
         candles.push({
           open,
           close,
@@ -444,28 +542,27 @@
       const width = rect.width;
       const height = rect.height;
 
-      ctx.fillStyle = '#0f141f';
+      ctx.fillStyle = '#0d1222';
       ctx.fillRect(0, 0, width, height);
 
       if (!candles.length) {
-        ctx.fillStyle = '#93a0b8';
-        ctx.font = '14px Inter';
+        ctx.fillStyle = '#98a2b8';
+        ctx.font = '13px Inter';
         ctx.fillText('No trade ticks yet', 16, 28);
         return;
       }
 
-      const minY = Math.min(...candles.map(c => c.low));
-      const maxY = Math.max(...candles.map(c => c.high));
+      const minY = Math.min(...candles.map((entry) => entry.low));
+      const maxY = Math.max(...candles.map((entry) => entry.high));
       const range = Math.max(maxY - minY, 0.0001);
-
-      const padX = 24;
-      const padY = 20;
+      const padX = 18;
+      const padY = 16;
       const chartW = width - padX * 2;
       const chartH = height - padY * 2;
 
-      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1;
-      for (let i = 0; i <= 4; i++) {
+      for (let i = 0; i <= 4; i += 1) {
         const y = padY + (chartH / 4) * i;
         ctx.beginPath();
         ctx.moveTo(padX, y);
@@ -476,15 +573,15 @@
       const slot = chartW / candles.length;
       const bodyW = Math.max(4, slot * 0.56);
 
-      candles.forEach((candle, idx) => {
-        const x = padX + slot * idx + slot / 2;
-        const yOpen = padY + (maxY - candle.open) / range * chartH;
-        const yClose = padY + (maxY - candle.close) / range * chartH;
-        const yHigh = padY + (maxY - candle.high) / range * chartH;
-        const yLow = padY + (maxY - candle.low) / range * chartH;
+      candles.forEach((candle, index) => {
+        const x = padX + slot * index + slot / 2;
+        const yOpen = padY + ((maxY - candle.open) / range) * chartH;
+        const yClose = padY + ((maxY - candle.close) / range) * chartH;
+        const yHigh = padY + ((maxY - candle.high) / range) * chartH;
+        const yLow = padY + ((maxY - candle.low) / range) * chartH;
         const bullish = candle.close >= candle.open;
 
-        ctx.strokeStyle = bullish ? '#4dd4a0' : '#ff5f6d';
+        ctx.strokeStyle = bullish ? '#2dd4bf' : '#fb7185';
         ctx.lineWidth = 1.2;
         ctx.beginPath();
         ctx.moveTo(x, yHigh);
@@ -492,8 +589,8 @@
         ctx.stroke();
 
         const top = Math.min(yOpen, yClose);
-        const bodyH = Math.max(Math.abs(yClose - yOpen), 1.4);
-        ctx.fillStyle = bullish ? '#4dd4a0' : '#ff5f6d';
+        const bodyH = Math.max(Math.abs(yClose - yOpen), 1.3);
+        ctx.fillStyle = bullish ? '#2dd4bf' : '#fb7185';
         ctx.fillRect(x - bodyW / 2, top, bodyW, bodyH);
       });
     }
@@ -513,12 +610,13 @@
         const symbol = mapSymbol(trade.strategy);
         const pnl = Number(trade.pnl || 0);
         const pnlClass = pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+
         return `
           <tr>
             <td>${trade.id}</td>
             <td>${symbol}</td>
             <td>${trade.strategy}</td>
-            <td>${Number(trade.amount || 0).toFixed(2)}</td>
+            <td>${Number(trade.amount || 0).toFixed(2)} SOL</td>
             <td class="${pnlClass}">${formatSigned(pnl)} SOL</td>
             <td><span class="status-pill">SIMULATED_FILL</span></td>
             <td>${new Date(trade.timestamp).toLocaleTimeString()}</td>
@@ -528,39 +626,65 @@
 
       document.getElementById('positionsBody').innerHTML = rows || `
         <tr>
-          <td colspan="7" class="muted">No position rows in current runtime state.</td>
+          <td colspan="7" style="color:#98a2b8;">No positions in current runtime state.</td>
+        </tr>
+      `;
+    }
+
+    function renderActivity(activityRows) {
+      const rows = activityRows.slice(0, 20).map((item) => {
+        const reference = item.postId || item.commentId || '-';
+        const content = String(item.content || '-').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const time = new Date(item.createdAt).toLocaleTimeString();
+        return `
+          <tr>
+            <td>${item.type || '-'}</td>
+            <td>${reference}</td>
+            <td>${content.slice(0, 72)}</td>
+            <td>${time}</td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('activityBody').innerHTML = rows || `
+        <tr>
+          <td colspan="4" style="color:#98a2b8;">No activity captured yet.</td>
         </tr>
       `;
     }
 
     function renderMetrics(trades, votes) {
       const totalTrades = trades.length;
-      const totalPnL = trades.reduce((sum, t) => sum + Number(t.pnl || 0), 0);
-      const wins = trades.filter(t => Number(t.pnl || 0) > 0).length;
+      const totalPnL = trades.reduce((sum, trade) => sum + Number(trade.pnl || 0), 0);
+      const wins = trades.filter((trade) => Number(trade.pnl || 0) > 0).length;
       const winRate = totalTrades ? (wins / totalTrades) * 100 : 0;
       const sharpe = computeSharpe(trades);
-
       const pnlText = `${formatSigned(totalPnL)} SOL`;
+
       document.getElementById('headerPnL').textContent = pnlText;
-      document.getElementById('headerWinRate').textContent = `${winRate.toFixed(1)}%`;
+      document.getElementById('headerVotes').textContent = String(Number(votes || 0));
       document.getElementById('cardPnL').textContent = pnlText;
       document.getElementById('cardWinRate').textContent = `${winRate.toFixed(1)}%`;
       document.getElementById('cardSharpe').textContent = sharpe.toFixed(2);
+      document.getElementById('cardTotalTrades').textContent = String(totalTrades);
+      document.getElementById('cardWinningTrades').textContent = String(wins);
       document.getElementById('cardVotes').textContent = String(Number(votes || 0));
 
       document.getElementById('cardPnL').className = `metric-value ${totalPnL >= 0 ? 'pnl-pos' : 'pnl-neg'}`;
-      document.title = `QANTUMSYNERGI | PnL ${formatSigned(totalPnL)} SOL | WR ${winRate.toFixed(1)}%`;
+      document.title = `Helios Synerga | PnL ${formatSigned(totalPnL)} SOL | Votes ${Number(votes || 0)}`;
     }
 
     async function refreshDashboard() {
-      const [trades, votesPayload] = await Promise.all([
+      const [trades, votesPayload, forumActivity] = await Promise.all([
         fetchJson('/api/trades', []),
-        fetchJson('/api/colosseum-votes', { votes: 0 })
+        fetchJson('/api/colosseum-votes', { votes: 0 }),
+        fetchJson('/api/forum', [])
       ]);
 
       const votes = Number(votesPayload?.votes || 0);
       renderMetrics(trades, votes);
       renderPositions(trades);
+      renderActivity(forumActivity);
 
       const btcCandles = buildCandlesFromTrades(trades, 'BTCUSDT');
       const solCandles = buildCandlesFromTrades(trades, 'SOLUSDT');
@@ -570,10 +694,6 @@
 
     refreshDashboard();
     setInterval(refreshDashboard, 5000);
-    setInterval(async () => {
-      const votesPayload = await fetchJson('/api/colosseum-votes', { votes: 0 });
-      document.getElementById('cardVotes').textContent = String(Number(votesPayload?.votes || 0));
-    }, 15000);
 
     window.addEventListener('resize', () => {
       refreshDashboard();

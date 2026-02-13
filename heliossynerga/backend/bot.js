@@ -623,10 +623,41 @@ app.get('/api/status', (req, res) =>
 );
 
 app.get('/api/colosseum-votes', async (req, res) => {
+  const readCachedVotes = (extra = {}) => {
+    db.get(
+      "SELECT votesCount FROM agent_status ORDER BY lastFetch DESC LIMIT 1",
+      (_, row) => res.json({ votes: Number(row?.votesCount || 0), source: 'local-cache', ...extra })
+    );
+  };
+
+  const normalizeVotes = (payload = {}) => {
+    const fromStatusVotes = Number(
+      payload?.votes?.count ?? payload?.votes?.total ?? payload?.votes?.value ?? Number.NaN
+    );
+
+    if (Number.isFinite(fromStatusVotes)) {
+      return Math.max(0, fromStatusVotes);
+    }
+
+    const fromAgentVotes = Number(payload?.agent?.votesCount ?? payload?.agent?.votes ?? Number.NaN);
+    if (Number.isFinite(fromAgentVotes)) {
+      return Math.max(0, fromAgentVotes);
+    }
+
+    return null;
+  };
+
   try {
     if (API_KEY) {
       const statusRes = await colosseum.get('/agents/status');
-      const votes = Number(statusRes?.data?.votes?.count || 0);
+      let votes = normalizeVotes(statusRes?.data);
+
+      if (votes === null) {
+        const myProjectRes = await colosseum.get('/my-project').catch(() => ({ data: {} }));
+        const project = myProjectRes?.data?.project || {};
+        const projectVotes = Number((project.agentUpvotes || 0) + (project.humanUpvotes || 0));
+        votes = Number.isFinite(projectVotes) ? projectVotes : 0;
+      }
 
       db.run(
         `INSERT INTO agent_status(agentId, name, status, engagementScore, projectsCount, votesCount, lastFetch)
@@ -643,16 +674,9 @@ app.get('/api/colosseum-votes', async (req, res) => {
 
       return res.json({ votes, source: 'colosseum' });
     }
-
-    db.get(
-      "SELECT votesCount FROM agent_status ORDER BY lastFetch DESC LIMIT 1",
-      (_, row) => res.json({ votes: Number(row?.votesCount || 0), source: 'local-cache' })
-    );
+    return readCachedVotes();
   } catch (e) {
-    db.get(
-      "SELECT votesCount FROM agent_status ORDER BY lastFetch DESC LIMIT 1",
-      (_, row) => res.json({ votes: Number(row?.votesCount || 0), source: 'local-cache', error: 'colosseum-unavailable' })
-    );
+    return readCachedVotes({ error: 'colosseum-unavailable' });
   }
 });
 
