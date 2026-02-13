@@ -1,11 +1,6 @@
 name: 🐉 HeliosSynerga Bot Deployment
 
 on:
-  push:
-    branches: [ main, develop ]
-  schedule:
-    # Run bot 24/7 on a schedule (every 2 hours)
-    - cron: '0 */2 * * *'
   workflow_dispatch:
 
 jobs:
