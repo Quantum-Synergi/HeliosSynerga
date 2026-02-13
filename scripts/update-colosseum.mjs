@@ -30,7 +30,7 @@ function resolveLiveDemoUrl() {
 
 const LIVE_DEMO = resolveLiveDemoUrl();
 const GITHUB_URL = 'https://github.com/Quantum-Synergi/HeliosSynerga';
-const DESCRIPTION = 'Autonomous institutional trading agent executing BTC/SOL strategies with enterprise-grade analytics dashboard. Real-time P&L tracking, risk management, and transparent decision logging via Node.js + Solana web3.js. Production-ready architecture built 100% by AI.';
+const DESCRIPTION = 'Autonomous AI trading agent executing BTC/SOL-oriented strategy cycles with risk management, live telemetry, and continuous decisioning.';
 const MINIMAL_SOLANA_TEXT = 'Integration details are intentionally minimal in this submission; implementation is documented in the public GitHub repository.';
 const UPDATE_SOURCE = 'workflow-push';
 

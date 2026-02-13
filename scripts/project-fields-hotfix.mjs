@@ -48,7 +48,7 @@ function resolveLiveAppLink() {
 const payload = {
   description:
     process.env.PROJECT_DESCRIPTION ||
-    'HeliosSynerga is an autonomous Solana trading agent that runs arbitrage, liquidity, and trend-following strategies with continuous monitoring and execution telemetry.',
+    'Autonomous AI trading agent executing BTC/SOL-oriented strategy cycles with risk management, live telemetry, and continuous decisioning.',
   repoLink: 'https://github.com/Quantum-Synergi/HeliosSynerga',
   solanaIntegration:
     process.env.SOLANA_INTEGRATION ||
