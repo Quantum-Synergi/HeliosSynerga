@@ -856,7 +856,8 @@ async function fetchSolanaPrices(symbols = ['BTCUSDT', 'SOLUSDT']) {
 
 async function fetchPublicForumConversations(limit = 20) {
   try {
-    const postsRes = await colosseum.get(`/forum/posts?limit=${Math.max(limit * 2, 40)}`).catch(() => ({ data: {} }));
+    const postsLimit = Math.min(100, Math.max(limit * 2, 40));
+    const postsRes = await colosseum.get(`/forum/posts?limit=${postsLimit}`).catch(() => ({ data: {} }));
     const allPosts = Array.isArray(postsRes?.data?.posts) ? postsRes.data.posts : [];
     const botNameLower = BOT_AGENT_NAME.toLowerCase();
     const relatedPosts = allPosts.filter((post) => {
