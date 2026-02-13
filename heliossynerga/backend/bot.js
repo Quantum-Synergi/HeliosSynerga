@@ -874,6 +874,18 @@ function projectVoteCount(project = {}) {
   return 0;
 }
 
+function projectVotesBreakdown(project = {}) {
+  const agentUpvotes = Number(project?.agentUpvotes || 0);
+  const humanUpvotes = Number(project?.humanUpvotes || 0);
+  const totalVotes = projectVoteCount(project);
+
+  return {
+    agentUpvotes: Number.isFinite(agentUpvotes) ? Math.max(0, agentUpvotes) : 0,
+    humanUpvotes: Number.isFinite(humanUpvotes) ? Math.max(0, humanUpvotes) : 0,
+    totalVotes
+  };
+}
+
 function isHeliosProject(project = {}) {
   const byId = Number(project?.id) === HELIOS_PROJECT_ID;
   if (byId) {
@@ -886,23 +898,6 @@ function isHeliosProject(project = {}) {
   return name === target || agentName === target;
 }
 
-function normalizeStatusVotes(payload = {}) {
-  const fromStatusVotes = Number(
-    payload?.votes?.count ?? payload?.votes?.total ?? payload?.votes?.value ?? Number.NaN
-  );
-
-  if (Number.isFinite(fromStatusVotes)) {
-    return Math.max(0, fromStatusVotes);
-  }
-
-  const fromAgentVotes = Number(payload?.agent?.votesCount ?? payload?.agent?.votes ?? Number.NaN);
-  if (Number.isFinite(fromAgentVotes)) {
-    return Math.max(0, fromAgentVotes);
-  }
-
-  return null;
-}
-
 async function fetchPublicProjectSnapshot() {
   let offset = 0;
   const limit = 100;
@@ -910,7 +905,7 @@ async function fetchPublicProjectSnapshot() {
 
   while (pages < 10) {
     const response = await colosseumPublic
-      .get(`/projects?sort=score&limit=${limit}&offset=${offset}`)
+      .get(`/projects?limit=${limit}&offset=${offset}`)
       .catch(() => ({ data: {} }));
 
     const projects = Array.isArray(response?.data?.projects) ? response.data.projects : [];
@@ -946,7 +941,10 @@ async function readCachedVotesSnapshot() {
     source: 'local-cache',
     fetchedAt: row?.lastFetch || null,
     agentId: row?.agentId || null,
-    name: row?.name || HELIOS_PROJECT_NAME
+    name: row?.name || HELIOS_PROJECT_NAME,
+    agentUpvotes: null,
+    humanUpvotes: null,
+    totalVotes: Number(row?.votesCount || 0)
   };
 }
 
@@ -963,38 +961,31 @@ async function refreshVoteSnapshot({ force = false } = {}) {
 
   votesRefreshPromise = (async () => {
     let votes = null;
+    let breakdown = null;
     let source = 'local-cache';
     let agentId = null;
     let statusLabel = 'running';
-    let engagementScore = 0;
-    let projectsCount = 1;
-
-    const publicProject = await fetchPublicProjectSnapshot();
-    if (publicProject) {
-      votes = projectVoteCount(publicProject);
-      source = 'colosseum-public';
-    }
+    const engagementScore = 0;
+    const projectsCount = 1;
 
     if (API_KEY) {
-      const statusRes = await colosseum.get('/agents/status').catch(() => null);
-      if (statusRes?.data) {
-        const privateVotes = normalizeStatusVotes(statusRes.data);
-        if (privateVotes !== null) {
-          votes = votes === null ? privateVotes : Math.max(votes, privateVotes);
-          source = source === 'colosseum-public' ? 'colosseum+public' : 'colosseum';
-        }
-
-        agentId = statusRes.data?.agent?.id || null;
-        statusLabel = statusRes.data?.agent?.status || statusLabel;
-        engagementScore = Number(statusRes.data?.engagement?.score || 0);
-        projectsCount = Number(statusRes.data?.projects?.count || projectsCount);
+      const myProjectRes = await colosseum.get('/my-project').catch(() => ({ data: {} }));
+      const myProject = myProjectRes?.data?.project || null;
+      if (myProject && isHeliosProject(myProject)) {
+        breakdown = projectVotesBreakdown(myProject);
+        votes = breakdown.totalVotes;
+        source = 'colosseum-my-project';
+        agentId = Number(myProject?.agentId || Number.NaN);
+        statusLabel = String(myProject?.status || statusLabel);
       }
+    }
 
-      if (votes === null) {
-        const myProjectRes = await colosseum.get('/my-project').catch(() => ({ data: {} }));
-        const myProjectVotes = projectVoteCount(myProjectRes?.data?.project || {});
-        votes = Number.isFinite(myProjectVotes) ? myProjectVotes : 0;
-        source = 'colosseum';
+    if (votes === null) {
+      const publicProject = await fetchPublicProjectSnapshot();
+      if (publicProject) {
+        breakdown = projectVotesBreakdown(publicProject);
+        votes = breakdown.totalVotes;
+        source = 'colosseum-public-projects';
       }
     }
 
@@ -1003,6 +994,11 @@ async function refreshVoteSnapshot({ force = false } = {}) {
       votes = cached.votes;
       source = cached.source;
       agentId = cached.agentId;
+      breakdown = {
+        agentUpvotes: cached.agentUpvotes,
+        humanUpvotes: cached.humanUpvotes,
+        totalVotes: cached.totalVotes
+      };
     }
 
     db.run(
@@ -1016,7 +1012,10 @@ async function refreshVoteSnapshot({ force = false } = {}) {
       votes: Math.max(0, Number(votes || 0)),
       source,
       projectId: HELIOS_PROJECT_ID,
-      fetchedAt: new Date(lastVotesRefreshAtMs).toISOString()
+      fetchedAt: new Date(lastVotesRefreshAtMs).toISOString(),
+      agentUpvotes: breakdown?.agentUpvotes ?? null,
+      humanUpvotes: breakdown?.humanUpvotes ?? null,
+      totalVotes: breakdown?.totalVotes ?? Math.max(0, Number(votes || 0))
     };
 
     return lastVotesSnapshot;
