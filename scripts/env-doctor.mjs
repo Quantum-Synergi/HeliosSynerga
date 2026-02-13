@@ -2,7 +2,10 @@ import 'dotenv/config';
 import fs from 'fs';
 import net from 'net';
 
-const requiredVars = ['COLOSSEUM_API_KEY', 'CHATGPT_KEY'];
+const requiredVarGroups = [
+  ['COLOSSEUM_API_KEY', 'TRADING_API_KEY'],
+  ['CHATGPT_KEY', 'OPENAI_API_KEY']
+];
 const optionalVars = ['RAILWAY_API_KEY', 'GH_TOKEN'];
 const port = Number(process.env.PORT || 4000);
 
@@ -38,9 +41,9 @@ async function run() {
     console.log('  Fix: cp .env.example .env');
   }
 
-  for (const key of requiredVars) {
-    const isSet = Boolean(process.env[key]);
-    console.log(`- ${key}: ${isSet ? 'set' : 'missing (required)'}`);
+  for (const group of requiredVarGroups) {
+    const isSet = group.some((key) => Boolean(process.env[key]));
+    console.log(`- ${group.join(' or ')}: ${isSet ? 'set' : 'missing (required)'}`);
     if (!isSet) hasFailure = true;
   }
 

@@ -31,5 +31,5 @@ jobs:
 
       - name: ✅ Validate Claim + Submission Fields
         env:
-          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY || secrets.TRADING_API_KEY }}
         run: npm run precheck:submit

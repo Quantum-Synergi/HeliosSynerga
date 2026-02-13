@@ -132,7 +132,7 @@
 
     .charts-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 1.25rem;
       min-height: 0;
     }
@@ -186,7 +186,7 @@
 
     .metrics-grid {
       display: grid;
-      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
       gap: 0.85rem;
     }
 
@@ -378,6 +378,10 @@
           <div id="headerPnL" class="header-value">+0.0000 SOL</div>
         </div>
         <div class="header-stat">
+          <div class="label">Wallet Balance</div>
+          <div id="headerWalletBalance" class="header-value">0.0000 SOL</div>
+        </div>
+        <div class="header-stat">
           <div class="label">Real Votes</div>
           <div id="headerVotes" class="header-value">0</div>
         </div>
@@ -402,6 +406,15 @@
           </div>
           <div class="chart-canvas-wrap">
             <canvas id="solChart"></canvas>
+          </div>
+        </article>
+        <article class="chart-card">
+          <div class="chart-head">
+            <div class="chart-title">Profit Over Time</div>
+            <div class="chart-subtitle">Cumulative P&amp;L (SOL)</div>
+          </div>
+          <div class="chart-canvas-wrap">
+            <canvas id="profitChart"></canvas>
           </div>
         </article>
       </section>
@@ -430,6 +443,26 @@
         <article class="metric-card">
           <div class="label">Vote Count</div>
           <div id="cardVotes" class="metric-value">0</div>
+        </article>
+        <article class="metric-card">
+          <div class="label">Wallet Allowance</div>
+          <div id="cardWalletAllowance" class="metric-value">0.0000 SOL</div>
+        </article>
+        <article class="metric-card">
+          <div class="label">Wallet Balance</div>
+          <div id="cardWalletBalance" class="metric-value">0.0000 SOL</div>
+        </article>
+        <article class="metric-card">
+          <div class="label">Wallet ROI</div>
+          <div id="cardWalletRoi" class="metric-value">0.00%</div>
+        </article>
+        <article class="metric-card">
+          <div class="label">Trade Volume</div>
+          <div id="cardTradeVolume" class="metric-value">0.0000 SOL</div>
+        </article>
+        <article class="metric-card">
+          <div class="label">Avg PnL / Trade</div>
+          <div id="cardAvgPnl" class="metric-value">+0.0000 SOL</div>
         </article>
       </section>
 
@@ -488,6 +521,10 @@
       const number = Number(value || 0);
       const sign = number >= 0 ? '+' : '';
       return `${sign}${number.toFixed(4)}`;
+    }
+
+    function formatPercent(value) {
+      return `${Number(value || 0).toFixed(2)}%`;
     }
 
     function computeSharpe(trades) {
@@ -571,30 +608,83 @@
       const minY = Math.min(...candles.map((entry) => entry.low));
       const maxY = Math.max(...candles.map((entry) => entry.high));
       const range = Math.max(maxY - minY, 0.0001);
-      const padX = 18;
-      const padY = 16;
-      const chartW = width - padX * 2;
-      const chartH = height - padY * 2;
+      const padLeft = 56;
+      const padRight = 14;
+      const padTop = 16;
+      const padBottom = 34;
+      const chartW = width - padLeft - padRight;
+      const chartH = height - padTop - padBottom;
+
+      const xFromIndex = (index) => padLeft + (index / Math.max(candles.length - 1, 1)) * chartW;
+      const yFromValue = (value) => padTop + ((maxY - value) / range) * chartH;
 
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1;
       for (let i = 0; i <= 4; i += 1) {
-        const y = padY + (chartH / 4) * i;
+        const y = padTop + (chartH / 4) * i;
+        const value = maxY - (range * i / 4);
         ctx.beginPath();
-        ctx.moveTo(padX, y);
-        ctx.lineTo(width - padX, y);
+        ctx.moveTo(padLeft, y);
+        ctx.lineTo(width - padRight, y);
         ctx.stroke();
+
+        ctx.fillStyle = 'rgba(184, 195, 220, 0.9)';
+        ctx.font = '11px Inter';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(value.toFixed(2), 8, y);
       }
+
+      const xTicks = 4;
+      for (let i = 0; i <= xTicks; i += 1) {
+        const normalized = i / xTicks;
+        const x = padLeft + normalized * chartW;
+        ctx.beginPath();
+        ctx.moveTo(x, padTop);
+        ctx.lineTo(x, padTop + chartH);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+        ctx.stroke();
+
+        const index = Math.min(candles.length - 1, Math.round(normalized * (candles.length - 1)));
+        const label = candles[index]?.label || '-';
+        ctx.fillStyle = 'rgba(184, 195, 220, 0.9)';
+        ctx.font = '10px Inter';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(label, x, padTop + chartH + 6);
+      }
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(padLeft, padTop);
+      ctx.lineTo(padLeft, padTop + chartH);
+      ctx.lineTo(width - padRight, padTop + chartH);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(184, 195, 220, 0.95)';
+      ctx.font = '11px Inter';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('Time', padLeft + chartW / 2, height - 2);
+
+      ctx.save();
+      ctx.translate(14, padTop + chartH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('Price Index', 0, 0);
+      ctx.restore();
 
       const slot = chartW / candles.length;
       const bodyW = Math.max(4, slot * 0.56);
 
       candles.forEach((candle, index) => {
-        const x = padX + slot * index + slot / 2;
-        const yOpen = padY + ((maxY - candle.open) / range) * chartH;
-        const yClose = padY + ((maxY - candle.close) / range) * chartH;
-        const yHigh = padY + ((maxY - candle.high) / range) * chartH;
-        const yLow = padY + ((maxY - candle.low) / range) * chartH;
+        const x = candles.length > 1 ? xFromIndex(index) : padLeft + chartW / 2;
+        const yOpen = yFromValue(candle.open);
+        const yClose = yFromValue(candle.close);
+        const yHigh = yFromValue(candle.high);
+        const yLow = yFromValue(candle.low);
         const bullish = candle.close >= candle.open;
 
         ctx.strokeStyle = bullish ? '#2dd4bf' : '#fb7185';
@@ -609,6 +699,129 @@
         ctx.fillStyle = bullish ? '#2dd4bf' : '#fb7185';
         ctx.fillRect(x - bodyW / 2, top, bodyW, bodyH);
       });
+    }
+
+    function drawProfitSeries(canvasId, points) {
+      const canvas = document.getElementById(canvasId);
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.floor(rect.width * ratio);
+      canvas.height = Math.floor(rect.height * ratio);
+
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      const width = rect.width;
+      const height = rect.height;
+
+      ctx.fillStyle = '#0d1222';
+      ctx.fillRect(0, 0, width, height);
+
+      if (!points.length) {
+        ctx.fillStyle = '#98a2b8';
+        ctx.font = '13px Inter';
+        ctx.fillText('No profit series yet', 16, 28);
+        return;
+      }
+
+      const values = points.map((point) => Number(point.cumulativePnl || 0));
+      const minY = Math.min(...values, 0);
+      const maxY = Math.max(...values, 0);
+      const range = Math.max(maxY - minY, 0.0001);
+      const padLeft = 64;
+      const padRight = 14;
+      const padTop = 16;
+      const padBottom = 34;
+      const chartW = width - padLeft - padRight;
+      const chartH = height - padTop - padBottom;
+
+      const getX = (index) => {
+        if (points.length === 1) return padLeft + chartW / 2;
+        return padLeft + (index / (points.length - 1)) * chartW;
+      };
+
+      const getY = (value) => padTop + ((maxY - value) / range) * chartH;
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i += 1) {
+        const y = padTop + (chartH / 4) * i;
+        const value = maxY - (range * i / 4);
+        ctx.beginPath();
+        ctx.moveTo(padLeft, y);
+        ctx.lineTo(width - padRight, y);
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(184, 195, 220, 0.9)';
+        ctx.font = '11px Inter';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(value.toFixed(4), 8, y);
+      }
+
+      const xTicks = 4;
+      for (let i = 0; i <= xTicks; i += 1) {
+        const normalized = i / xTicks;
+        const x = padLeft + normalized * chartW;
+        ctx.beginPath();
+        ctx.moveTo(x, padTop);
+        ctx.lineTo(x, padTop + chartH);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+        ctx.stroke();
+
+        const index = Math.min(points.length - 1, Math.round(normalized * (points.length - 1)));
+        const label = String(points[index]?.sequence || index + 1);
+        ctx.fillStyle = 'rgba(184, 195, 220, 0.9)';
+        ctx.font = '10px Inter';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(label, x, padTop + chartH + 6);
+      }
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(padLeft, padTop);
+      ctx.lineTo(padLeft, padTop + chartH);
+      ctx.lineTo(width - padRight, padTop + chartH);
+      ctx.stroke();
+
+      const zeroLineY = getY(0);
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.beginPath();
+      ctx.moveTo(padLeft, zeroLineY);
+      ctx.lineTo(width - padRight, zeroLineY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      points.forEach((point, index) => {
+        const x = getX(index);
+        const y = getY(Number(point.cumulativePnl || 0));
+        if (index === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+
+      const lastValue = Number(points[points.length - 1]?.cumulativePnl || 0);
+      const positive = lastValue >= 0;
+      ctx.strokeStyle = positive ? '#2dd4bf' : '#fb7185';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(184, 195, 220, 0.95)';
+      ctx.font = '11px Inter';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('Trade #', padLeft + chartW / 2, height - 2);
+
+      ctx.save();
+      ctx.translate(14, padTop + chartH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('Cumulative PnL (SOL)', 0, 0);
+      ctx.restore();
     }
 
     async function fetchJson(url, fallback) {
@@ -707,15 +920,21 @@
       `;
     }
 
-    function renderMetrics(trades, votes) {
+    function renderMetrics(trades, votes, walletStats) {
       const totalTrades = trades.length;
       const totalPnL = trades.reduce((sum, trade) => sum + Number(trade.pnl || 0), 0);
       const wins = trades.filter((trade) => Number(trade.pnl || 0) > 0).length;
       const winRate = totalTrades ? (wins / totalTrades) * 100 : 0;
       const sharpe = computeSharpe(trades);
       const pnlText = `${formatSigned(totalPnL)} SOL`;
+      const allowanceSol = Number(walletStats?.virtualWallet?.allowanceSol || 0);
+      const currentBalanceSol = Number(walletStats?.virtualWallet?.currentBalanceSol || allowanceSol + totalPnL);
+      const roiPct = Number(walletStats?.virtualWallet?.roiPct || 0);
+      const totalVolumeSol = Number(walletStats?.trading?.totalVolumeSol || 0);
+      const avgPnlSol = Number(walletStats?.trading?.avgPnlSol || 0);
 
       document.getElementById('headerPnL').textContent = pnlText;
+      document.getElementById('headerWalletBalance').textContent = `${currentBalanceSol.toFixed(4)} SOL`;
       document.getElementById('headerVotes').textContent = String(Number(votes || 0));
       document.getElementById('cardPnL').textContent = pnlText;
       document.getElementById('cardWinRate').textContent = `${winRate.toFixed(1)}%`;
@@ -723,36 +942,62 @@
       document.getElementById('cardTotalTrades').textContent = String(totalTrades);
       document.getElementById('cardWinningTrades').textContent = String(wins);
       document.getElementById('cardVotes').textContent = String(Number(votes || 0));
+      document.getElementById('cardWalletAllowance').textContent = `${allowanceSol.toFixed(4)} SOL`;
+      document.getElementById('cardWalletBalance').textContent = `${currentBalanceSol.toFixed(4)} SOL`;
+      document.getElementById('cardWalletRoi').textContent = formatPercent(roiPct);
+      document.getElementById('cardTradeVolume').textContent = `${totalVolumeSol.toFixed(4)} SOL`;
+      document.getElementById('cardAvgPnl').textContent = `${formatSigned(avgPnlSol)} SOL`;
 
       document.getElementById('cardPnL').className = `metric-value ${totalPnL >= 0 ? 'pnl-pos' : 'pnl-neg'}`;
+      document.getElementById('cardWalletBalance').className = `metric-value ${currentBalanceSol >= allowanceSol ? 'pnl-pos' : 'pnl-neg'}`;
+      document.getElementById('cardWalletRoi').className = `metric-value ${roiPct >= 0 ? 'pnl-pos' : 'pnl-neg'}`;
+      document.getElementById('cardAvgPnl').className = `metric-value ${avgPnlSol >= 0 ? 'pnl-pos' : 'pnl-neg'}`;
       document.title = `Helios Synerga | PnL ${formatSigned(totalPnL)} SOL | Votes ${Number(votes || 0)}`;
     }
 
     async function refreshDashboard() {
-      const [trades, votesPayload, forumActivity, heartbeatPayload] = await Promise.all([
+      const [trades, votesPayload, forumActivity, heartbeatPayload, walletStatsPayload, pnlSeriesPayload, tradingSettingsPayload] = await Promise.all([
         fetchJson('/api/trades', []),
         fetchJson('/api/colosseum-votes', { votes: 0 }),
         fetchJson('/api/forum', []),
-        fetchJson('/api/heartbeat', { ok: false })
+        fetchJson('/api/heartbeat', { ok: false }),
+        fetchJson('/api/wallet-stats', {
+          virtualWallet: {
+            allowanceSol: 0,
+            currentBalanceSol: 0,
+            roiPct: 0
+          },
+          trading: {
+            totalVolumeSol: 0,
+            avgPnlSol: 0
+          }
+        }),
+        fetchJson('/api/pnl-series', { points: [] }),
+        fetchJson('/api/trading-settings', {
+          tradingMode: 'virtual-wallet',
+          allowanceSource: 'unknown'
+        })
       ]);
 
       const votes = Number(votesPayload?.votes || 0);
       const apiSource = votesPayload?.source || 'unknown';
       const degraded = Boolean(votesPayload?.error);
 
-      renderMetrics(trades, votes);
+      renderMetrics(trades, votes, walletStatsPayload);
       renderPositions(trades);
       renderActivity(forumActivity);
 
       const btcCandles = buildCandlesFromTrades(trades, 'BTCUSDT');
       const solCandles = buildCandlesFromTrades(trades, 'SOLUSDT');
+      const pnlSeries = Array.isArray(pnlSeriesPayload?.points) ? pnlSeriesPayload.points.slice(-120) : [];
       drawCandles('btcChart', btcCandles);
       drawCandles('solChart', solCandles);
+      drawProfitSeries('profitChart', pnlSeries);
 
       updateApiSyncStatus({
         ok: !degraded,
         source: apiSource,
-        note: degraded ? 'votes fallback active' : ''
+        note: `${degraded ? 'votes fallback active | ' : ''}${tradingSettingsPayload?.tradingMode || 'mode:unknown'} | wallet:${tradingSettingsPayload?.allowanceSource || 'unknown'}`
       });
 
       updateHeartbeatStatus(heartbeatPayload);

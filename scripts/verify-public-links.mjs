@@ -46,7 +46,10 @@ async function checkTarget(target) {
     { path: '/', required: true },
     { path: '/api/health', required: true },
     { path: '/api/status', required: true },
-    { path: '/api/trades', required: true }
+    { path: '/api/trades', required: true },
+    { path: '/api/wallet-stats', required: true },
+    { path: '/api/pnl-series', required: true },
+    { path: '/api/trading-settings', required: true }
   ];
 
   console.log(`\n🔎 Checking ${target.label}: ${target.url}`);

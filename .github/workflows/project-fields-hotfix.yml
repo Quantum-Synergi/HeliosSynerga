@@ -30,7 +30,7 @@ jobs:
 
       - name: 🚑 Apply /my-project Field Hotfix
         env:
-          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY || secrets.TRADING_API_KEY }}
           LIVE_APP_LINK: ${{ vars.LIVE_APP_LINK }}
           PRESENTATION_LINK: ${{ vars.PRESENTATION_LINK }}
         run: npm run hotfix:project-fields

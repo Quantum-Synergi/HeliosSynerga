@@ -15,6 +15,9 @@ declare -a PATHS=(
 	"/api/health"
 	"/api/status"
 	"/api/trades"
+	"/api/wallet-stats"
+	"/api/pnl-series"
+	"/api/trading-settings"
 )
 
 echo "🔎 Railway judge verification"

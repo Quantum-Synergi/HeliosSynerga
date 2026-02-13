@@ -33,8 +33,8 @@ jobs:
       - name: 🔐 Setup Environment
         run: |
           cat > .env << 'EOF'
-          COLOSSEUM_API_KEY=${{ secrets.COLOSSEUM_API_KEY }}
-          CHATGPT_KEY=${{ secrets.CHATGPT_KEY }}
+          COLOSSEUM_API_KEY=${{ secrets.COLOSSEUM_API_KEY || secrets.TRADING_API_KEY }}
+          CHATGPT_KEY=${{ secrets.CHATGPT_KEY || secrets.OPENAI_API_KEY }}
           RAILWAY_API_KEY=${{ secrets.RAILWAY_API_KEY }}
           GH_TOKEN=${{ secrets.GH_TOKEN }}
           PORT=${{ secrets.PORT || '4000' }}
@@ -58,8 +58,8 @@ jobs:
             exit "$EXIT_CODE"
           fi
         env:
-          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
-          CHATGPT_KEY: ${{ secrets.CHATGPT_KEY }}
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY || secrets.TRADING_API_KEY }}
+          CHATGPT_KEY: ${{ secrets.CHATGPT_KEY || secrets.OPENAI_API_KEY }}
           RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           PORT: ${{ secrets.PORT || '4000' }}

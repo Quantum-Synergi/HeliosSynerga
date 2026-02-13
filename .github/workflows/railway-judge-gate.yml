@@ -1,0 +1,41 @@
+name: 🧪 Railway Judge Gate
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "🐉 HeliosSynerga Bot Deployment"
+      - "🚀 HeliosSynerga 24/7 Continuous Bot"
+    types:
+      - completed
+
+jobs:
+  gate:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: ✅ Verify Public URLs + APIs
+        env:
+          LIVE_DEMO_URL: ${{ vars.LIVE_DEMO_URL || vars.LIVE_APP_LINK || 'https://literate-adventure-97vxgq6rjjvp379v4-4000.app.github.dev/' }}
+          LIVE_APP_LINK: ${{ vars.LIVE_APP_LINK || vars.LIVE_DEMO_URL || 'https://literate-adventure-97vxgq6rjjvp379v4-4000.app.github.dev/' }}
+          RAILWAY_PUBLIC_URL: ${{ vars.RAILWAY_PUBLIC_URL || vars.LIVE_DEMO_URL || vars.LIVE_APP_LINK || 'https://heliossynerga-production.up.railway.app' }}
+        run: npm run verify:public-links
+
+      - name: 🧪 Railway Judge Endpoint Gate
+        env:
+          RAILWAY_PUBLIC_URL: ${{ vars.RAILWAY_PUBLIC_URL || vars.LIVE_DEMO_URL || vars.LIVE_APP_LINK || 'https://heliossynerga-production.up.railway.app' }}
+        run: bash scripts/railway-judge-check.sh "$RAILWAY_PUBLIC_URL"

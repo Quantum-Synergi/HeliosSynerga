@@ -32,6 +32,6 @@ jobs:
 
       - name: 🫀 Refetch Skills + Heartbeat
         env:
-          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY || secrets.TRADING_API_KEY }}
           HACKATHON_UPDATE_NOTE: ${{ vars.HACKATHON_UPDATE_NOTE }}
         run: npm run refetch:skills-heartbeat

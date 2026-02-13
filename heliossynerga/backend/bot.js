@@ -5,14 +5,20 @@ import sqlite3 from 'sqlite3';
 import OpenAI from 'openai';
 import 'dotenv/config';
 
-const API_KEY = process.env.COLOSSEUM_API_KEY;
-const CHATGPT_KEY = process.env.CHATGPT_KEY;
+const API_KEY = process.env.COLOSSEUM_API_KEY || process.env.TRADING_API_KEY;
+const CHATGPT_KEY = process.env.CHATGPT_KEY || process.env.OPENAI_API_KEY;
 const RAILWAY_API_KEY = process.env.RAILWAY_API_KEY;
 const GH_TOKEN = process.env.GH_TOKEN;
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
 const TWITTER_ACCESS_TOKEN = process.env.TWITTER_ACCESS_TOKEN;
 const TWITTER_ACCESS_TOKEN_SECRET = process.env.TWITTER_ACCESS_TOKEN_SECRET;
+const VIRTUAL_WALLET_START_SOL = Number(
+  process.env.VIRTUAL_WALLET_START_SOL ||
+  process.env.COLOSSEUM_VIRTUAL_WALLET_SOL ||
+  process.env.HACKATHON_WALLET_SOL ||
+  1
+);
 const PORT = process.env.PORT || 4000;
 const SKILL_FILE_CANDIDATES = (
   process.env.COLOSSEUM_SKILL_FILE_PATHS
@@ -51,10 +57,38 @@ function getSkillFileContext() {
   return loadSkillFileContext();
 }
 
+function toFiniteNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function pickWalletAllowanceFromStatus(statusPayload = {}) {
+  const candidates = [
+    statusPayload?.wallet?.allowedSol,
+    statusPayload?.wallet?.balanceSol,
+    statusPayload?.wallet?.balance,
+    statusPayload?.walletBalanceSol,
+    statusPayload?.walletBalance,
+    statusPayload?.budgetSol,
+    statusPayload?.budget,
+    statusPayload?.allowanceSol,
+    statusPayload?.allowance
+  ];
+
+  for (const candidate of candidates) {
+    const numeric = toFiniteNumber(candidate);
+    if (numeric !== null && numeric >= 0) {
+      return numeric;
+    }
+  }
+
+  return null;
+}
+
 const initialSkillFileContext = getSkillFileContext();
 
 console.log(
-  `🔐 Env check | COLOSSEUM_API_KEY: ${API_KEY ? 'set' : 'missing'} | CHATGPT_KEY: ${CHATGPT_KEY ? 'set' : 'missing'} | RAILWAY_API_KEY: ${RAILWAY_API_KEY ? 'set' : 'missing'} | GH_TOKEN: ${GH_TOKEN ? 'set' : 'missing'}`
+  `🔐 Env check | COLOSSEUM_API_KEY/TRADING_API_KEY: ${API_KEY ? 'set' : 'missing'} | CHATGPT_KEY/OPENAI_API_KEY: ${CHATGPT_KEY ? 'set' : 'missing'} | RAILWAY_API_KEY: ${RAILWAY_API_KEY ? 'set' : 'missing'} | GH_TOKEN: ${GH_TOKEN ? 'set' : 'missing'}`
 );
 
 if (initialSkillFileContext.path) {
@@ -143,14 +177,14 @@ const colosseum = axios.create({
 if (API_KEY) {
   colosseum.defaults.headers.Authorization = `Bearer ${API_KEY}`;
 } else {
-  console.warn('⚠️ COLOSSEUM_API_KEY not provided - Colosseum API actions will fail until set');
+  console.warn('⚠️ COLOSSEUM_API_KEY/TRADING_API_KEY not provided - Colosseum API actions will fail until set');
 }
 
 let openai = null;
 if (CHATGPT_KEY) {
   openai = new OpenAI({ apiKey: CHATGPT_KEY });
 } else {
-  console.warn('⚠️ CHATGPT_KEY not provided - AI decision engine will be disabled');
+  console.warn('⚠️ CHATGPT_KEY/OPENAI_API_KEY not provided - AI decision engine will be disabled');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -160,7 +194,7 @@ if (CHATGPT_KEY) {
 async function createProject() {
   try {
     if (!API_KEY) {
-      console.warn('⚠️ Skipping createProject: COLOSSEUM_API_KEY missing');
+      console.warn('⚠️ Skipping createProject: COLOSSEUM_API_KEY/TRADING_API_KEY missing');
       return null;
     }
 
@@ -204,7 +238,7 @@ async function createProject() {
 async function updateProject() {
   try {
     if (!API_KEY) {
-      console.warn('⚠️ Skipping updateProject: COLOSSEUM_API_KEY missing');
+      console.warn('⚠️ Skipping updateProject: COLOSSEUM_API_KEY/TRADING_API_KEY missing');
       return null;
     }
 
@@ -238,7 +272,7 @@ async function updateProject() {
 async function submitProject() {
   try {
     if (!API_KEY) {
-      console.warn('⚠️ Skipping submitProject: COLOSSEUM_API_KEY missing');
+      console.warn('⚠️ Skipping submitProject: COLOSSEUM_API_KEY/TRADING_API_KEY missing');
       return null;
     }
 
@@ -260,7 +294,7 @@ async function submitProject() {
 async function getAgentStatus() {
   try {
     if (!API_KEY) {
-      console.warn('⚠️ Skipping getAgentStatus: COLOSSEUM_API_KEY missing');
+      console.warn('⚠️ Skipping getAgentStatus: COLOSSEUM_API_KEY/TRADING_API_KEY missing');
       return null;
     }
 
@@ -333,7 +367,7 @@ async function fetchLeaderboard() {
 async function getActivePoll() {
   try {
     if (!API_KEY) {
-      console.warn('⚠️ Skipping getActivePoll: COLOSSEUM_API_KEY missing');
+      console.warn('⚠️ Skipping getActivePoll: COLOSSEUM_API_KEY/TRADING_API_KEY missing');
       return null;
     }
 
@@ -354,7 +388,7 @@ async function getActivePoll() {
 async function respondToPoll(pollId, response) {
   try {
     if (!API_KEY) {
-      console.warn('⚠️ Skipping respondToPoll: COLOSSEUM_API_KEY missing');
+      console.warn('⚠️ Skipping respondToPoll: COLOSSEUM_API_KEY/TRADING_API_KEY missing');
       return null;
     }
 
@@ -369,7 +403,7 @@ async function respondToPoll(pollId, response) {
 async function createForumPost() {
   try {
     if (!API_KEY) {
-      console.warn('⚠️ Skipping createForumPost: COLOSSEUM_API_KEY missing');
+      console.warn('⚠️ Skipping createForumPost: COLOSSEUM_API_KEY/TRADING_API_KEY missing');
       return null;
     }
 
@@ -402,7 +436,7 @@ async function createForumPost() {
 async function commentOnPost(postId, message) {
   try {
     if (!API_KEY) {
-      console.warn('⚠️ Skipping commentOnPost: COLOSSEUM_API_KEY missing');
+      console.warn('⚠️ Skipping commentOnPost: COLOSSEUM_API_KEY/TRADING_API_KEY missing');
       return null;
     }
 
@@ -423,7 +457,7 @@ async function commentOnPost(postId, message) {
 async function voteOnProject(projectId, value = 1) {
   try {
     if (!API_KEY) {
-      console.warn('⚠️ Skipping voteOnProject: COLOSSEUM_API_KEY missing');
+      console.warn('⚠️ Skipping voteOnProject: COLOSSEUM_API_KEY/TRADING_API_KEY missing');
       return null;
     }
 
@@ -482,7 +516,7 @@ async function chatGPTStrategy() {
         nextTrade: { strategy: ['arbitrage', 'liquidity', 'trend'][Math.floor(Math.random() * 3)], amount: 0.05 },
         projectPhase: 'submit',
         twitterMessage: 'Autonomous trading active on Solana 🚀',
-        reasoning: 'Fallback strategy mode (CHATGPT_KEY not configured)'
+        reasoning: 'Fallback strategy mode (CHATGPT_KEY/OPENAI_API_KEY not configured)'
       };
     }
 
@@ -646,6 +680,132 @@ app.use('/api', (req, res, next) => {
 
 app.get('/', (req, res) => {
   res.sendFile('index.html', { root: './heliossynerga/dashboard' });
+});
+
+function dbGetAsync(sql, params = []) {
+  return new Promise((resolve) => {
+    db.get(sql, params, (_, row) => resolve(row || null));
+  });
+}
+
+function dbAllAsync(sql, params = []) {
+  return new Promise((resolve) => {
+    db.all(sql, params, (_, rows) => resolve(rows || []));
+  });
+}
+
+async function resolveWalletAllowanceSol() {
+  if (!API_KEY) {
+    return {
+      allowanceSol: VIRTUAL_WALLET_START_SOL,
+      source: 'env-default'
+    };
+  }
+
+  try {
+    const statusRes = await colosseum.get('/agents/status');
+    const allowanceFromStatus = pickWalletAllowanceFromStatus(statusRes?.data || {});
+    if (allowanceFromStatus !== null) {
+      return {
+        allowanceSol: allowanceFromStatus,
+        source: 'colosseum-status'
+      };
+    }
+  } catch {
+    // Fall through to local defaults/cache below.
+  }
+
+  return {
+    allowanceSol: VIRTUAL_WALLET_START_SOL,
+    source: 'env-default'
+  };
+}
+
+app.get('/api/trading-settings', async (req, res) => {
+  const wallet = await resolveWalletAllowanceSol();
+
+  return res.json({
+    tradingMode: 'virtual-wallet',
+    virtualWalletStartSol: VIRTUAL_WALLET_START_SOL,
+    allowanceSol: wallet.allowanceSol,
+    allowanceSource: wallet.source,
+    cycleStrategies: [
+      { strategy: 'arbitrage', amountSol: 0.05 },
+      { strategy: 'liquidity', amountSol: 0.1 },
+      { strategy: 'trend', amountSol: 0.05 }
+    ]
+  });
+});
+
+app.get('/api/wallet-stats', async (req, res) => {
+  const wallet = await resolveWalletAllowanceSol();
+
+  const summary = await dbGetAsync(
+    `SELECT
+      COUNT(*) AS totalTrades,
+      SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) AS winningTrades,
+      SUM(CASE WHEN pnl < 0 THEN 1 ELSE 0 END) AS losingTrades,
+      SUM(COALESCE(amount, 0)) AS totalVolumeSol,
+      SUM(COALESCE(pnl, 0)) AS totalPnlSol,
+      AVG(COALESCE(pnl, 0)) AS avgPnlSol
+    FROM trades`
+  );
+
+  const totalTrades = Number(summary?.totalTrades || 0);
+  const winningTrades = Number(summary?.winningTrades || 0);
+  const losingTrades = Number(summary?.losingTrades || 0);
+  const totalVolumeSol = Number(summary?.totalVolumeSol || 0);
+  const totalPnlSol = Number(summary?.totalPnlSol || 0);
+  const avgPnlSol = Number(summary?.avgPnlSol || 0);
+  const winRatePct = totalTrades ? (winningTrades / totalTrades) * 100 : 0;
+  const currentBalanceSol = wallet.allowanceSol + totalPnlSol;
+  const roiPct = wallet.allowanceSol > 0 ? (totalPnlSol / wallet.allowanceSol) * 100 : 0;
+
+  return res.json({
+    virtualWallet: {
+      mode: 'virtual-wallet',
+      allowanceSol: wallet.allowanceSol,
+      startBalanceSol: wallet.allowanceSol,
+      currentBalanceSol,
+      realizedPnlSol: totalPnlSol,
+      roiPct,
+      source: wallet.source
+    },
+    trading: {
+      totalTrades,
+      winningTrades,
+      losingTrades,
+      winRatePct,
+      totalVolumeSol,
+      avgPnlSol
+    }
+  });
+});
+
+app.get('/api/pnl-series', async (req, res) => {
+  const trades = await dbAllAsync(
+    "SELECT id, strategy, amount, pnl, timestamp FROM trades ORDER BY timestamp ASC LIMIT 300"
+  );
+
+  let cumulativePnl = 0;
+  const series = trades.map((trade, index) => {
+    const pnl = Number(trade.pnl || 0);
+    cumulativePnl += pnl;
+    return {
+      id: trade.id,
+      sequence: index + 1,
+      strategy: trade.strategy,
+      amount: Number(trade.amount || 0),
+      pnl,
+      cumulativePnl,
+      timestamp: trade.timestamp
+    };
+  });
+
+  return res.json({
+    points: series,
+    count: series.length
+  });
 });
 
 app.get('/api/trades', (req, res) =>

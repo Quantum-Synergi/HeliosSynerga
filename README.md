@@ -64,6 +64,11 @@ Execute    : places simulated trade records and updates project/forum actions
 - `scripts/pre-submit-check.mjs` — submission readiness checks
 - `scripts/colosseum-audit.mjs` — competition audit tooling
 
+Dashboard API surfaces:
+- `/api/wallet-stats` — virtual wallet allowance, live balance, ROI, trade stats
+- `/api/pnl-series` — cumulative profit-over-time points
+- `/api/trading-settings` — effective virtual wallet/trading mode config
+
 ---
 
 ## ⚙️ Configuration {#configuration}
@@ -75,6 +80,7 @@ COLOSSEUM_API_KEY=
 CHATGPT_KEY=
 RAILWAY_API_KEY=
 GH_TOKEN=
+VIRTUAL_WALLET_START_SOL=1.0
 PORT=4000
 LIVE_APP_LINK=https://your-live-demo-url
 LIVE_DEMO_URL=https://your-live-demo-url
