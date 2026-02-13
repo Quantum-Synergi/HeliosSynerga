@@ -201,6 +201,13 @@ const colosseum = axios.create({
   }
 });
 
+const colosseumPublic = axios.create({
+  baseURL: 'https://agents.colosseum.com/api',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
 if (API_KEY) {
   colosseum.defaults.headers.Authorization = `Bearer ${API_KEY}`;
 } else {
@@ -857,7 +864,7 @@ async function fetchSolanaPrices(symbols = ['BTCUSDT', 'SOLUSDT']) {
 async function fetchPublicForumConversations(limit = 20) {
   try {
     const postsLimit = Math.min(100, Math.max(limit * 2, 40));
-    const postsRes = await colosseum.get(`/forum/posts?limit=${postsLimit}`).catch(() => ({ data: {} }));
+    const postsRes = await colosseumPublic.get(`/forum/posts?limit=${postsLimit}`).catch(() => ({ data: {} }));
     const allPosts = Array.isArray(postsRes?.data?.posts) ? postsRes.data.posts : [];
     const botNameLower = BOT_AGENT_NAME.toLowerCase();
     const relatedPosts = allPosts.filter((post) => {
@@ -879,7 +886,7 @@ async function fetchPublicForumConversations(limit = 20) {
 
     const commentCollections = await Promise.all(
       selectedPosts.slice(0, 12).map(async (post) => {
-        const commentsRes = await colosseum.get(`/forum/posts/${post.id}/comments?limit=40`).catch(() => ({ data: {} }));
+        const commentsRes = await colosseumPublic.get(`/forum/posts/${post.id}/comments?limit=40`).catch(() => ({ data: {} }));
         const comments = Array.isArray(commentsRes?.data?.comments) ? commentsRes.data.comments : [];
         const selectedComments = relatedPosts.length > 0
           ? comments.filter((comment) => {
