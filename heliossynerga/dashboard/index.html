@@ -129,6 +129,30 @@
       background: var(--cruip-glass);
     }
 
+    .colosseum-link-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--cruip-border);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--cruip-text);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.5rem 0.65rem;
+      transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .colosseum-link-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.35);
+      transform: translateY(-1px);
+    }
+
     .label {
       color: var(--cruip-muted);
       text-transform: uppercase;
@@ -428,8 +452,8 @@
           <div id="headerWalletBalance" class="header-value">0.0000 SOL</div>
         </div>
         <div class="header-stat">
-          <div class="label">Real Votes</div>
-          <div id="headerVotes" class="header-value">0</div>
+          <div class="label">Colosseum</div>
+          <a class="colosseum-link-btn" href="https://colosseum.com/agent-hackathon/projects/heliossynerga" target="_blank" rel="noopener noreferrer">View Project</a>
         </div>
       </div>
     </header>
@@ -485,10 +509,6 @@
         <article class="metric-card">
           <div class="label">Winning Trades</div>
           <div id="cardWinningTrades" class="metric-value">0</div>
-        </article>
-        <article class="metric-card">
-          <div class="label">Vote Count</div>
-          <div id="cardVotes" class="metric-value">0</div>
         </article>
         <article class="metric-card">
           <div class="label">Wallet Allowance</div>
@@ -1018,7 +1038,7 @@
       `;
     }
 
-    function renderMetrics(trades, votes, walletStats) {
+    function renderMetrics(trades, walletStats) {
       const totalTrades = trades.length;
       const totalPnL = trades.reduce((sum, trade) => sum + Number(trade.pnl || 0), 0);
       const wins = trades.filter((trade) => Number(trade.pnl || 0) > 0).length;
@@ -1033,13 +1053,11 @@
 
       document.getElementById('headerPnL').textContent = pnlText;
       document.getElementById('headerWalletBalance').textContent = `${currentBalanceSol.toFixed(4)} SOL`;
-      document.getElementById('headerVotes').textContent = String(Number(votes || 0));
       document.getElementById('cardPnL').textContent = pnlText;
       document.getElementById('cardWinRate').textContent = `${winRate.toFixed(1)}%`;
       document.getElementById('cardSharpe').textContent = sharpe.toFixed(2);
       document.getElementById('cardTotalTrades').textContent = String(totalTrades);
       document.getElementById('cardWinningTrades').textContent = String(wins);
-      document.getElementById('cardVotes').textContent = String(Number(votes || 0));
       document.getElementById('cardWalletAllowance').textContent = `${allowanceSol.toFixed(4)} SOL`;
       document.getElementById('cardWalletBalance').textContent = `${currentBalanceSol.toFixed(4)} SOL`;
       document.getElementById('cardWalletRoi').textContent = formatPercent(roiPct);
@@ -1050,7 +1068,7 @@
       document.getElementById('cardWalletBalance').className = `metric-value ${currentBalanceSol >= allowanceSol ? 'pnl-pos' : 'pnl-neg'}`;
       document.getElementById('cardWalletRoi').className = `metric-value ${roiPct >= 0 ? 'pnl-pos' : 'pnl-neg'}`;
       document.getElementById('cardAvgPnl').className = `metric-value ${avgPnlSol >= 0 ? 'pnl-pos' : 'pnl-neg'}`;
-      document.title = `Helios Synerga | PnL ${formatSigned(totalPnL)} SOL | Votes ${Number(votes || 0)}`;
+      document.title = `Helios Synerga | PnL ${formatSigned(totalPnL)} SOL`;
     }
 
     function renderForumConversations(forumRows) {
@@ -1083,11 +1101,10 @@
     }
 
     async function refreshDashboard() {
-      const [trades, livePositionsPayload, forumConversationsPayload, votesPayload, heartbeatPayload, walletStatsPayload, pnlSeriesPayload, tradingSettingsPayload] = await Promise.all([
+      const [trades, livePositionsPayload, forumConversationsPayload, heartbeatPayload, walletStatsPayload, pnlSeriesPayload, tradingSettingsPayload] = await Promise.all([
         fetchJson('/api/trades', []),
         fetchJson('/api/positions-live', { items: [] }),
         fetchJson('/api/forum-conversations', { items: [] }),
-        fetchJson('/api/colosseum-votes', { votes: 0 }),
         fetchJson('/api/heartbeat', { ok: false }),
         fetchJson('/api/wallet-stats', {
           virtualWallet: {
@@ -1107,9 +1124,6 @@
         })
       ]);
 
-      const votes = Number(votesPayload?.totalVotes ?? votesPayload?.votes ?? 0);
-      const apiSource = votesPayload?.source || 'unknown';
-      const degraded = Boolean(votesPayload?.error);
       const livePositions = Array.isArray(livePositionsPayload?.items)
         ? livePositionsPayload.items
         : [];
@@ -1117,7 +1131,7 @@
         ? forumConversationsPayload.items
         : [];
 
-      renderMetrics(trades, votes, walletStatsPayload);
+      renderMetrics(trades, walletStatsPayload);
       renderPositions(livePositions);
       renderForumConversations(forumConversations);
 
@@ -1129,9 +1143,9 @@
       drawProfitSeries('profitChart', pnlSeries);
 
       updateApiSyncStatus({
-        ok: !degraded,
-        source: apiSource,
-        note: `${degraded ? 'votes fallback active | ' : ''}${tradingSettingsPayload?.tradingMode || 'mode:unknown'} | wallet:${tradingSettingsPayload?.allowanceSource || 'unknown'} | api:${resolvedApiBase || window.location.origin}`
+        ok: true,
+        source: 'dashboard-api',
+        note: `${tradingSettingsPayload?.tradingMode || 'mode:unknown'} | wallet:${tradingSettingsPayload?.allowanceSource || 'unknown'} | api:${resolvedApiBase || window.location.origin}`
       });
 
       updateHeartbeatStatus(heartbeatPayload);
