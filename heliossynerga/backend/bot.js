@@ -18,9 +18,9 @@ const SKILL_FILE_CANDIDATES = (
   process.env.COLOSSEUM_SKILL_FILE_PATHS
     ? process.env.COLOSSEUM_SKILL_FILE_PATHS.split(',').map((value) => value.trim()).filter(Boolean)
     : [
-        './AGENT_SKILL_FILE.md',
         './.colosseum/AGENT_SKILL_FILE.md',
-        './.colosseum/agent-skill-file.md'
+        './.colosseum/agent-skill-file.md',
+        './AGENT_SKILL_FILE.md'
       ]
 );
 
@@ -47,14 +47,18 @@ function loadSkillFileContext() {
   };
 }
 
-const skillFileContext = loadSkillFileContext();
+function getSkillFileContext() {
+  return loadSkillFileContext();
+}
+
+const initialSkillFileContext = getSkillFileContext();
 
 console.log(
   `🔐 Env check | COLOSSEUM_API_KEY: ${API_KEY ? 'set' : 'missing'} | CHATGPT_KEY: ${CHATGPT_KEY ? 'set' : 'missing'} | RAILWAY_API_KEY: ${RAILWAY_API_KEY ? 'set' : 'missing'} | GH_TOKEN: ${GH_TOKEN ? 'set' : 'missing'}`
 );
 
-if (skillFileContext.path) {
-  console.log(`🧭 Skill file loaded: ${skillFileContext.path}`);
+if (initialSkillFileContext.path) {
+  console.log(`🧭 Skill file loaded: ${initialSkillFileContext.path}`);
 } else {
   console.warn(`⚠️ No skill file found. Checked: ${SKILL_FILE_CANDIDATES.join(', ')}`);
 }
@@ -470,6 +474,8 @@ async function executeTrade(strategy, amount) {
 
 async function chatGPTStrategy() {
   try {
+    const skillFileContext = getSkillFileContext();
+
     if (!openai) {
       console.log('ℹ️ OpenAI not configured - using fallback strategy');
       return {
