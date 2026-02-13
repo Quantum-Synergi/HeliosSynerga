@@ -231,4 +231,4 @@ MIT - Open source and free to use
 
 ---
 
-**Built with 🔥 for autonomous trading** | Made by HeliosSynerga Team
+**Built with 🔥 for autonomous trading** | Made by the Quantum Synergi Team
