@@ -478,7 +478,6 @@
                   <th>Strategy</th>
                   <th>Size</th>
                   <th>PnL</th>
-                  <th>Status</th>
                   <th>Time</th>
                 </tr>
               </thead>
@@ -954,7 +953,6 @@
             <td>${trade.strategy}</td>
             <td>${Number(trade.amount || 0).toFixed(2)} SOL</td>
             <td class="${pnlClass}">${formatSigned(pnl)} SOL</td>
-            <td><span class="status-pill">SIMULATED_FILL</span></td>
             <td>${new Date(trade.timestamp).toLocaleTimeString()}</td>
           </tr>
         `;
@@ -962,7 +960,7 @@
 
       document.getElementById('positionsBody').innerHTML = rows || `
         <tr>
-          <td colspan="7" style="color:#98a2b8;">No positions in current runtime state.</td>
+          <td colspan="6" style="color:#98a2b8;">No positions in current runtime state.</td>
         </tr>
       `;
     }
