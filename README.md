@@ -156,7 +156,7 @@ Project Name      : HeliosSynerga
 Project ID        : 621
 Project Phase     : active
 Scoreboard Rank   : not available in current local record
-Submission Status : running locally; API-linked submission requires COLOSSEUM_API_KEY
+Submission Status : submitted on Colosseum (2026-02-11T09:25:29.397Z)
 ```
 
 ---
