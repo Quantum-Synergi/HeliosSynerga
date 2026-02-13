@@ -14,10 +14,50 @@ const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
 const TWITTER_ACCESS_TOKEN = process.env.TWITTER_ACCESS_TOKEN;
 const TWITTER_ACCESS_TOKEN_SECRET = process.env.TWITTER_ACCESS_TOKEN_SECRET;
 const PORT = process.env.PORT || 4000;
+const SKILL_FILE_CANDIDATES = (
+  process.env.COLOSSEUM_SKILL_FILE_PATHS
+    ? process.env.COLOSSEUM_SKILL_FILE_PATHS.split(',').map((value) => value.trim()).filter(Boolean)
+    : [
+        './AGENT_SKILL_FILE.md',
+        './.colosseum/AGENT_SKILL_FILE.md',
+        './.colosseum/agent-skill-file.md'
+      ]
+);
+
+function loadSkillFileContext() {
+  for (const candidatePath of SKILL_FILE_CANDIDATES) {
+    if (!fs.pathExistsSync(candidatePath)) {
+      continue;
+    }
+
+    const content = String(fs.readFileSync(candidatePath, 'utf8') || '').trim();
+    if (!content) {
+      continue;
+    }
+
+    return {
+      path: candidatePath,
+      content
+    };
+  }
+
+  return {
+    path: null,
+    content: ''
+  };
+}
+
+const skillFileContext = loadSkillFileContext();
 
 console.log(
   `🔐 Env check | COLOSSEUM_API_KEY: ${API_KEY ? 'set' : 'missing'} | CHATGPT_KEY: ${CHATGPT_KEY ? 'set' : 'missing'} | RAILWAY_API_KEY: ${RAILWAY_API_KEY ? 'set' : 'missing'} | GH_TOKEN: ${GH_TOKEN ? 'set' : 'missing'}`
 );
+
+if (skillFileContext.path) {
+  console.log(`🧭 Skill file loaded: ${skillFileContext.path}`);
+} else {
+  console.warn(`⚠️ No skill file found. Checked: ${SKILL_FILE_CANDIDATES.join(', ')}`);
+}
 
 // ═══════════════════════════════════════════════════════════════
 // DATABASE SETUP
@@ -446,6 +486,9 @@ async function chatGPTStrategy() {
 
     const prompt = `You are HeliosSynerga, an AI agent in the Solana Colosseum Hackathon (Feb 2-12, 2026).
 Your mission: Build the best autonomous trading bot on Solana and win prizes.
+
+  Skill File Context (${skillFileContext.path || 'missing'}):
+  ${skillFileContext.content || 'No skill file content available. Use conservative fallback strategy and avoid unsupported assumptions.'}
 
 Current Status:
 - Recent trades (last 10): ${JSON.stringify(trades.slice(0, 5))}
