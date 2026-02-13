@@ -31,5 +31,7 @@ jobs:
       - name: 🎯 Update /my-project Metadata
         env:
           COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY || secrets.TRADING_API_KEY }}
-          LIVE_DEMO_URL: ${{ vars.LIVE_DEMO_URL }}
+          LIVE_DEMO_URL: ${{ vars.LIVE_DEMO_URL || vars.LIVE_APP_LINK || vars.RAILWAY_PUBLIC_URL || 'https://heliossynerga-production.up.railway.app' }}
+          LIVE_APP_LINK: ${{ vars.LIVE_APP_LINK || vars.LIVE_DEMO_URL || vars.RAILWAY_PUBLIC_URL || 'https://heliossynerga-production.up.railway.app' }}
+          RAILWAY_PUBLIC_URL: ${{ vars.RAILWAY_PUBLIC_URL || vars.LIVE_DEMO_URL || vars.LIVE_APP_LINK || 'https://heliossynerga-production.up.railway.app' }}
         run: npm run update-colosseum
