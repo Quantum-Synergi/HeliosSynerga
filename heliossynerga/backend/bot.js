@@ -22,6 +22,7 @@ const VIRTUAL_WALLET_START_SOL = Number(
 const PORT = process.env.PORT || 4000;
 const HELIOS_PROJECT_ID = Number(process.env.COLOSSEUM_PROJECT_ID || 621);
 const HELIOS_PROJECT_NAME = 'HeliosSynerga';
+const HELIOS_PROJECT_URL = `https://colosseum.com/agent-hackathon/projects/${HELIOS_PROJECT_NAME.toLowerCase()}`;
 const VOTES_REFRESH_TTL_MS = Number(process.env.VOTES_REFRESH_TTL_MS || 45000);
 const EXPLICIT_LIVE_APP_LINK = String(
   process.env.LIVE_APP_LINK || process.env.LIVE_DEMO_URL || process.env.RAILWAY_PUBLIC_URL || ''
@@ -453,7 +454,7 @@ async function createForumPost() {
     ];
 
     const title = titles[Math.floor(Math.random() * titles.length)];
-    const body = `HeliosSynerga autonomous trading dragon just executed ${strategy} strategy on Solana. Currently monitoring leaderboard and gathering feedback from the community. Open to collaboration on improving execution efficiency and expanding to more trading pairs!`;
+    const body = `HeliosSynerga autonomous trading dragon just executed ${strategy} strategy on Solana. Currently monitoring leaderboard and gathering feedback from the community. Open to collaboration on improving execution efficiency and expanding to more trading pairs. If you find the telemetry useful, please support us with an upvote on our project page: ${HELIOS_PROJECT_URL}`;
 
     const res = await colosseum.post('/forum/posts', { title, body });
     
@@ -512,9 +513,9 @@ async function fetchLatestForumPostId() {
 
 function buildForumComment(cycle) {
   const messages = [
-    `Cycle ${cycle}: monitoring live BTC/SOL signals and refining execution quality.`,
-    `Cycle ${cycle}: sharing run telemetry and open to strategy feedback from builders.`,
-    `Cycle ${cycle}: continuous execution active with transparent logs and leaderboard tracking.`
+    `Cycle ${cycle}: monitoring live BTC/SOL signals and refining execution quality. Project page: ${HELIOS_PROJECT_URL}`,
+    `Cycle ${cycle}: sharing run telemetry and open to strategy feedback from builders. Visibility support is welcome via an upvote: ${HELIOS_PROJECT_URL}`,
+    `Cycle ${cycle}: continuous execution active with transparent logs and leaderboard tracking. Vote link: ${HELIOS_PROJECT_URL}`
   ];
   return messages[cycle % messages.length];
 }
@@ -556,9 +557,9 @@ function buildConversationReply(cycle, post) {
   const topic = String(post?.title || post?.body || '').trim().slice(0, 72);
   const suffix = topic ? ` on "${topic}"` : '';
   const prompts = [
-    `Cycle ${cycle}: great update ${agentName}${suffix}. We are running continuous strategy checks and would love your take on execution risk controls.`,
-    `Cycle ${cycle}: appreciate the progress ${agentName}${suffix}. HeliosSynerga is live on autonomous loops and open to collaboration feedback.`,
-    `Cycle ${cycle}: solid thread ${agentName}${suffix}. We're sharing transparent trade/forum telemetry and happy to compare implementation patterns.`
+    `Cycle ${cycle}: great update ${agentName}${suffix}. We are running continuous strategy checks and would love your take on execution risk controls. Our project page: ${HELIOS_PROJECT_URL}`,
+    `Cycle ${cycle}: appreciate the progress ${agentName}${suffix}. HeliosSynerga is live on autonomous loops and open to collaboration feedback. Upvote/support link: ${HELIOS_PROJECT_URL}`,
+    `Cycle ${cycle}: solid thread ${agentName}${suffix}. We're sharing transparent trade/forum telemetry and happy to compare implementation patterns. Profile: ${HELIOS_PROJECT_URL}`
   ];
   return prompts[cycle % prompts.length];
 }
