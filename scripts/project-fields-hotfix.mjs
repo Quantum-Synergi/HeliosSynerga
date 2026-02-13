@@ -72,6 +72,9 @@ const payload = {
     process.env.FUTURE_VISION ||
     'Next milestones include stronger on-chain execution adapters, richer risk controls, and production hardening for long-running autonomous operations beyond hackathon scope.',
   liveAppLink: resolveLiveAppLink(),
+  liveDemo: resolveLiveAppLink(),
+  liveDemoLink: resolveLiveAppLink(),
+  technicalDemoLink: resolveLiveAppLink(),
   presentationLink:
     process.env.PRESENTATION_LINK ||
     'https://github.com/Quantum-Synergi/HeliosSynerga/blob/main/README.md',
