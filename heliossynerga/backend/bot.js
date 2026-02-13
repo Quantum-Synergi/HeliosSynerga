@@ -23,6 +23,10 @@ const PORT = process.env.PORT || 4000;
 const HELIOS_PROJECT_ID = Number(process.env.COLOSSEUM_PROJECT_ID || 621);
 const HELIOS_PROJECT_NAME = 'HeliosSynerga';
 const HELIOS_PROJECT_URL = `https://colosseum.com/agent-hackathon/projects/${HELIOS_PROJECT_NAME.toLowerCase()}`;
+const HELIOS_STABLE_DEMO_URL = stripTrailingSlash(
+  process.env.HELIOS_STABLE_DEMO_URL || process.env.RAILWAY_PUBLIC_URL || 'https://heliossynerga-production.up.railway.app'
+);
+const HELIOS_PRO_DESCRIPTION = 'HeliosSynerga is an autonomous Solana trading system that executes disciplined BTC/SOL strategy cycles with risk controls, continuous telemetry, and transparent operational reporting. It is designed for reliable 24/7 decision support and measurable execution quality in live market conditions. Colosseum Project ID: 621.';
 const VOTES_REFRESH_TTL_MS = Number(process.env.VOTES_REFRESH_TTL_MS || 45000);
 const EXPLICIT_LIVE_APP_LINK = String(
   process.env.LIVE_APP_LINK || process.env.LIVE_DEMO_URL || process.env.RAILWAY_PUBLIC_URL || ''
@@ -91,6 +95,10 @@ function resolveLiveAppLinkForPort(port) {
 }
 
 let runtimeLiveAppLink = resolveLiveAppLinkForPort(PORT);
+
+function resolveColosseumLiveDemoUrl() {
+  return HELIOS_STABLE_DEMO_URL;
+}
 
 function pickWalletAllowanceFromStatus(statusPayload = {}) {
   const candidates = [
@@ -245,7 +253,7 @@ async function createProject() {
 
     const projectData = {
       name: 'HeliosSynerga',
-      description: 'Three-headed AI trading dragon: arbitrage strategies (0.05 SOL), liquidity optimization (0.1 SOL), and trend-following (0.05 SOL). Autonomous execution on Solana DEXes with real-time decision making.',
+      description: HELIOS_PRO_DESCRIPTION,
       repoLink: 'https://github.com/Quantum-Synergi/HeliosSynerga',
       solanaIntegration: 'Executes swaps on Jupiter DEX, monitors Pyth price feeds for trend analysis, settles via Solana Pay, tracks positions in PDAs. AutoTx for composable swaps.',
       problemStatement: 'Active Solana traders manage positions manually across multiple protocols and miss opportunities when markets move quickly. They need autonomous execution that can monitor signals 24/7 and react within seconds.',
@@ -254,7 +262,9 @@ async function createProject() {
       businessModel: 'Freemium automation tooling: free base strategy templates, paid advanced strategy packs and execution analytics for power users.',
       competitiveLandscape: 'Existing bots often focus on single strategies or closed ecosystems. HeliosSynerga differentiates via multi-strategy orchestration, transparent activity logs, and rapid iteration in public during the hackathon.',
       futureVision: 'Post-hackathon roadmap adds robust on-chain execution adapters, richer risk controls, and production-grade deployment pipelines for continuous autonomous operation.',
-      liveAppLink: runtimeLiveAppLink,
+      liveAppLink: resolveColosseumLiveDemoUrl(),
+      liveDemo: resolveColosseumLiveDemoUrl(),
+      liveDemoLink: resolveColosseumLiveDemoUrl(),
       presentationLink: 'https://github.com/Quantum-Synergi/HeliosSynerga/blob/main/README.md',
       tags: ['defi', 'ai', 'trading']
     };
@@ -281,7 +291,7 @@ async function updateProject() {
     }
 
     const updateData = {
-      description: 'Three-headed AI trading dragon executing autonomous strategies on Solana: arbitrage spreads (0.05 SOL/cycle), liquidity provision and rebalancing (0.1 SOL/cycle), and trend-following with ML signals (0.05 SOL/cycle). Integrated with ChatGPT-4 for real-time analysis and strategy recommendations.',
+      description: HELIOS_PRO_DESCRIPTION,
       solanaIntegration: 'Full Solana integration: (1) Jupiter API for atomic swaps across multiple DEXes, (2) Pyth oracle price feeds for trend detection, (3) Solana Pay for instant settlement, (4) PDA-based position tracking, (5) Clockwork for scheduled transactions, (6) Real-time composable swaps with AutoTx.',
       problemStatement: 'Active Solana traders manage positions manually across multiple protocols and miss opportunities when markets move quickly. They need autonomous execution that can monitor signals 24/7 and react within seconds.',
       technicalApproach: 'Node.js executor monitors market data and strategy signals, composes transactions for protocol interactions, and posts execution telemetry to a local dashboard and Colosseum updates. Project state and activity are persisted in SQLite for deterministic recovery.',
@@ -289,8 +299,12 @@ async function updateProject() {
       businessModel: 'Freemium automation tooling: free base strategy templates, paid advanced strategy packs and execution analytics for power users.',
       competitiveLandscape: 'Existing bots often focus on single strategies or closed ecosystems. HeliosSynerga differentiates via multi-strategy orchestration, transparent activity logs, and rapid iteration in public during the hackathon.',
       futureVision: 'Post-hackathon roadmap adds robust on-chain execution adapters, richer risk controls, and production-grade deployment pipelines for continuous autonomous operation.',
-      liveAppLink: runtimeLiveAppLink,
-      presentationLink: 'https://github.com/Quantum-Synergi/HeliosSynerga/blob/main/README.md'
+      liveAppLink: resolveColosseumLiveDemoUrl(),
+      liveDemo: resolveColosseumLiveDemoUrl(),
+      liveDemoLink: resolveColosseumLiveDemoUrl(),
+      repoLink: 'https://github.com/Quantum-Synergi/HeliosSynerga',
+      presentationLink: 'https://github.com/Quantum-Synergi/HeliosSynerga/blob/main/README.md',
+      tags: ['defi', 'ai', 'trading']
     };
 
     const res = await colosseum.put('/my-project', updateData);
