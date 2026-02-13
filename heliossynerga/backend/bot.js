@@ -691,7 +691,7 @@ async function mainLoop() {
       }
 
       // 6. Forum engagement
-      if (cycle % 4 === 0) {
+      if (cycle % 3 === 0) {
         await engageForum(cycle);
       }
 
@@ -1034,6 +1034,32 @@ app.get('/api/forum', (req, res) =>
     res.json(rows || [])
   )
 );
+
+app.get('/api/forum-conversations', async (req, res) => {
+  const rows = await dbAllAsync(
+    "SELECT id, type, postId, commentId, content, createdAt FROM forum_activity ORDER BY createdAt DESC LIMIT 120"
+  );
+
+  const items = rows.map((row) => ({
+    id: row.id,
+    type: row.type || 'comment',
+    reference: row.commentId || row.postId || row.id,
+    content: String(row.content || ''),
+    createdAt: row.createdAt
+  }));
+
+  const postCount = items.filter((item) => item.type === 'post').length;
+  const commentCount = items.filter((item) => item.type === 'comment').length;
+
+  return res.json({
+    items,
+    count: items.length,
+    summary: {
+      posts: postCount,
+      comments: commentCount
+    }
+  });
+});
 
 app.get('/api/activity', async (req, res) => {
   const [trades, forumRows, statusRows, leaderboardRows] = await Promise.all([

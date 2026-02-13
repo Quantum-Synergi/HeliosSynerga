@@ -216,7 +216,7 @@
 
     .bottom-grid {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 1rem;
       min-height: 0;
     }
@@ -294,6 +294,18 @@
       color: #fecdd3;
       border-color: rgba(251, 113, 133, 0.55);
       background: rgba(251, 113, 133, 0.14);
+    }
+
+    .forum-pill-post {
+      color: #bfdbfe;
+      border-color: rgba(59, 130, 246, 0.55);
+      background: rgba(59, 130, 246, 0.15);
+    }
+
+    .forum-pill-comment {
+      color: #fde68a;
+      border-color: rgba(250, 204, 21, 0.55);
+      background: rgba(250, 204, 21, 0.15);
     }
 
     .footer {
@@ -495,6 +507,23 @@
                 </tr>
               </thead>
               <tbody id="positionsBody"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="table-card glass-panel">
+          <h3 class="table-title">Forum Conversations</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Reference</th>
+                  <th>Message</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody id="forumBody"></tbody>
             </table>
           </div>
         </article>
@@ -1002,10 +1031,40 @@
       document.title = `Helios Synerga | PnL ${formatSigned(totalPnL)} SOL | Votes ${Number(votes || 0)}`;
     }
 
+    function renderForumConversations(forumRows) {
+      const rows = forumRows.slice(0, 20).map((item) => {
+        const type = String(item.type || 'comment').toLowerCase();
+        const reference = item.reference || item.commentId || item.postId || item.id || '-';
+        const message = String(item.content || item.message || '-')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+        const timestamp = item.createdAt || item.timestamp;
+        const isPost = type === 'post';
+        const typeLabel = isPost ? 'Post' : 'Comment';
+        const pillClass = isPost ? 'forum-pill-post' : 'forum-pill-comment';
+
+        return `
+          <tr>
+            <td><span class="status-pill ${pillClass}">${typeLabel}</span></td>
+            <td>${reference}</td>
+            <td>${message.slice(0, 84)}</td>
+            <td>${timestamp ? new Date(timestamp).toLocaleTimeString() : '-'}</td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('forumBody').innerHTML = rows || `
+        <tr>
+          <td colspan="4" style="color:#98a2b8;">No forum conversations captured yet.</td>
+        </tr>
+      `;
+    }
+
     async function refreshDashboard() {
-      const [trades, livePositionsPayload, votesPayload, heartbeatPayload, walletStatsPayload, pnlSeriesPayload, tradingSettingsPayload] = await Promise.all([
+      const [trades, livePositionsPayload, forumConversationsPayload, votesPayload, heartbeatPayload, walletStatsPayload, pnlSeriesPayload, tradingSettingsPayload] = await Promise.all([
         fetchJson('/api/trades', []),
         fetchJson('/api/positions-live', { items: [] }),
+        fetchJson('/api/forum-conversations', { items: [] }),
         fetchJson('/api/colosseum-votes', { votes: 0 }),
         fetchJson('/api/heartbeat', { ok: false }),
         fetchJson('/api/wallet-stats', {
@@ -1032,9 +1091,13 @@
       const livePositions = Array.isArray(livePositionsPayload?.items)
         ? livePositionsPayload.items
         : [];
+      const forumConversations = Array.isArray(forumConversationsPayload?.items)
+        ? forumConversationsPayload.items
+        : [];
 
       renderMetrics(trades, votes, walletStatsPayload);
       renderPositions(livePositions);
+      renderForumConversations(forumConversations);
 
       const btcCandles = buildCandlesFromTrades(trades, 'BTCUSDT');
       const solCandles = buildCandlesFromTrades(trades, 'SOLUSDT');

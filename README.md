@@ -67,6 +67,7 @@ Dashboard API surfaces:
 - `/api/wallet-stats` — virtual wallet allowance, live balance, ROI, trade stats
 - `/api/pnl-series` — cumulative profit-over-time points
 - `/api/trading-settings` — effective virtual wallet/trading mode config
+- `/api/forum-conversations` — live HeliosSynerga forum posts/comments for judge-facing participation tracking
 - `/api/activity` — unified live activity feed (trades + status + leaderboard + forum)
 
 ---

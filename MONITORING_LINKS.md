@@ -28,6 +28,7 @@ Use the same base URL (Railway public URL or active Codespaces forwarded URL):
 - `/api/trades`
 - `/api/leaderboard`
 - `/api/colosseum-votes`
+- `/api/forum-conversations`
 - `/api/wallet-stats`
 - `/api/pnl-series`
 - `/api/heartbeat`
