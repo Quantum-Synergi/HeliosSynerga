@@ -1,0 +1,36 @@
+name: 🚑 Project Fields Hotfix
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'scripts/project-fields-hotfix.mjs'
+      - '.github/workflows/project-fields-hotfix.yml'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  hotfix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🚑 Apply /my-project Field Hotfix
+        env:
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+          LIVE_APP_LINK: ${{ vars.LIVE_APP_LINK }}
+          PRESENTATION_LINK: ${{ vars.PRESENTATION_LINK }}
+        run: npm run hotfix:project-fields
