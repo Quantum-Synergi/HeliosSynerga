@@ -20,6 +20,9 @@ const VIRTUAL_WALLET_START_SOL = Number(
   1
 );
 const PORT = process.env.PORT || 4000;
+const HELIOS_PROJECT_ID = Number(process.env.COLOSSEUM_PROJECT_ID || 621);
+const HELIOS_PROJECT_NAME = 'HeliosSynerga';
+const VOTES_REFRESH_TTL_MS = Number(process.env.VOTES_REFRESH_TTL_MS || 45000);
 const EXPLICIT_LIVE_APP_LINK = String(
   process.env.LIVE_APP_LINK || process.env.LIVE_DEMO_URL || process.env.RAILWAY_PUBLIC_URL || ''
 ).trim();
@@ -365,8 +368,7 @@ async function getAgentStatus() {
 
 async function fetchLeaderboard() {
   try {
-    // Fetch projects to see rankings (simulated leaderboard)
-    const res = await colosseum.get('/projects?sort=score&limit=20').catch(() => ({ data: { projects: [] } }));
+    const res = await colosseumPublic.get('/projects?sort=score&limit=20').catch(() => ({ data: { projects: [] } }));
 
     const projects = res.data.projects || [];
     let helioRank = 0;
@@ -375,15 +377,15 @@ async function fetchLeaderboard() {
       const tags = proj.tags?.join(',') || '';
       db.run(`INSERT INTO leaderboard(rank, projectName, score, author, status, tags, fetchedAt)
               VALUES(?, ?, ?, ?, ?, ?, datetime('now'))`,
-        [idx + 1, proj.name, proj.agentUpvotes + proj.humanUpvotes || 0, proj.agentName, proj.status, tags]
+        [idx + 1, proj.name, projectVoteCount(proj), proj.agentName, proj.status, tags]
       );
 
-      if (proj.agentName === 'HeliosSynerga') {
+      if (String(proj.agentName || '') === HELIOS_PROJECT_NAME || String(proj.name || '') === HELIOS_PROJECT_NAME) {
         helioRank = idx + 1;
       }
     });
 
-    console.log(`📈 Leaderboard Updated | HeliosSynerga Rank: #${helioRank || '?'}/20`);
+    console.log(`📈 Leaderboard Updated | ${HELIOS_PROJECT_NAME} Rank: #${helioRank || '?'}/20`);
     if (projects.slice(0, 5).length > 0) {
       console.log('🥇 Top 5:', projects.slice(0, 5).map((p, i) => `${i+1}. ${p.name} (${p.agentName})`).join(' | '));
     }
@@ -846,9 +848,184 @@ const LIVE_SYMBOL_TOKEN_MAP = {
   SOLUSDT: 'So11111111111111111111111111111111111111112'
 };
 const USD_QUOTES = new Set(['USDC', 'USDT', 'USDS', 'USDH', 'USDC.E']);
-const BOT_AGENT_NAME = 'HeliosSynerga';
+const BOT_AGENT_NAME = HELIOS_PROJECT_NAME;
 let latestLivePriceSnapshot = null;
 let lastLivePriceLogAtMs = 0;
+let lastVotesRefreshAtMs = 0;
+let votesRefreshPromise = null;
+let lastVotesSnapshot = {
+  votes: 0,
+  source: 'bootstrap',
+  projectId: HELIOS_PROJECT_ID,
+  fetchedAt: null
+};
+
+function projectVoteCount(project = {}) {
+  const combinedVotes = Number((project?.agentUpvotes || 0) + (project?.humanUpvotes || 0));
+  if (Number.isFinite(combinedVotes)) {
+    return Math.max(0, combinedVotes);
+  }
+
+  const scoreVotes = Number(project?.score);
+  if (Number.isFinite(scoreVotes)) {
+    return Math.max(0, scoreVotes);
+  }
+
+  return 0;
+}
+
+function isHeliosProject(project = {}) {
+  const byId = Number(project?.id) === HELIOS_PROJECT_ID;
+  if (byId) {
+    return true;
+  }
+
+  const name = String(project?.name || '').toLowerCase();
+  const agentName = String(project?.agentName || '').toLowerCase();
+  const target = HELIOS_PROJECT_NAME.toLowerCase();
+  return name === target || agentName === target;
+}
+
+function normalizeStatusVotes(payload = {}) {
+  const fromStatusVotes = Number(
+    payload?.votes?.count ?? payload?.votes?.total ?? payload?.votes?.value ?? Number.NaN
+  );
+
+  if (Number.isFinite(fromStatusVotes)) {
+    return Math.max(0, fromStatusVotes);
+  }
+
+  const fromAgentVotes = Number(payload?.agent?.votesCount ?? payload?.agent?.votes ?? Number.NaN);
+  if (Number.isFinite(fromAgentVotes)) {
+    return Math.max(0, fromAgentVotes);
+  }
+
+  return null;
+}
+
+async function fetchPublicProjectSnapshot() {
+  let offset = 0;
+  const limit = 100;
+  let pages = 0;
+
+  while (pages < 10) {
+    const response = await colosseumPublic
+      .get(`/projects?sort=score&limit=${limit}&offset=${offset}`)
+      .catch(() => ({ data: {} }));
+
+    const projects = Array.isArray(response?.data?.projects) ? response.data.projects : [];
+    const matched = projects.find((project) => isHeliosProject(project));
+    if (matched) {
+      return matched;
+    }
+
+    if (!projects.length) {
+      break;
+    }
+
+    offset += limit;
+    pages += 1;
+
+    const totalCount = Number(response?.data?.totalCount || 0);
+    if (Number.isFinite(totalCount) && totalCount > 0 && offset >= totalCount) {
+      break;
+    }
+  }
+
+  return null;
+}
+
+async function readCachedVotesSnapshot() {
+  const row = await dbGetAsync(
+    'SELECT votesCount, agentId, name, lastFetch FROM agent_status ORDER BY lastFetch DESC LIMIT 1'
+  );
+
+  return {
+    votes: Number(row?.votesCount || 0),
+    projectId: HELIOS_PROJECT_ID,
+    source: 'local-cache',
+    fetchedAt: row?.lastFetch || null,
+    agentId: row?.agentId || null,
+    name: row?.name || HELIOS_PROJECT_NAME
+  };
+}
+
+async function refreshVoteSnapshot({ force = false } = {}) {
+  const now = Date.now();
+
+  if (!force && lastVotesSnapshot?.fetchedAt && now - lastVotesRefreshAtMs < VOTES_REFRESH_TTL_MS) {
+    return lastVotesSnapshot;
+  }
+
+  if (votesRefreshPromise) {
+    return votesRefreshPromise;
+  }
+
+  votesRefreshPromise = (async () => {
+    let votes = null;
+    let source = 'local-cache';
+    let agentId = null;
+    let statusLabel = 'running';
+    let engagementScore = 0;
+    let projectsCount = 1;
+
+    const publicProject = await fetchPublicProjectSnapshot();
+    if (publicProject) {
+      votes = projectVoteCount(publicProject);
+      source = 'colosseum-public';
+    }
+
+    if (API_KEY) {
+      const statusRes = await colosseum.get('/agents/status').catch(() => null);
+      if (statusRes?.data) {
+        const privateVotes = normalizeStatusVotes(statusRes.data);
+        if (privateVotes !== null) {
+          votes = votes === null ? privateVotes : Math.max(votes, privateVotes);
+          source = source === 'colosseum-public' ? 'colosseum+public' : 'colosseum';
+        }
+
+        agentId = statusRes.data?.agent?.id || null;
+        statusLabel = statusRes.data?.agent?.status || statusLabel;
+        engagementScore = Number(statusRes.data?.engagement?.score || 0);
+        projectsCount = Number(statusRes.data?.projects?.count || projectsCount);
+      }
+
+      if (votes === null) {
+        const myProjectRes = await colosseum.get('/my-project').catch(() => ({ data: {} }));
+        const myProjectVotes = projectVoteCount(myProjectRes?.data?.project || {});
+        votes = Number.isFinite(myProjectVotes) ? myProjectVotes : 0;
+        source = 'colosseum';
+      }
+    }
+
+    if (votes === null) {
+      const cached = await readCachedVotesSnapshot();
+      votes = cached.votes;
+      source = cached.source;
+      agentId = cached.agentId;
+    }
+
+    db.run(
+      `INSERT INTO agent_status(agentId, name, status, engagementScore, projectsCount, votesCount, lastFetch)
+       VALUES(?, ?, ?, ?, ?, ?, datetime('now'))`,
+      [agentId, HELIOS_PROJECT_NAME, statusLabel, engagementScore, projectsCount, Math.max(0, Number(votes || 0))]
+    );
+
+    lastVotesRefreshAtMs = Date.now();
+    lastVotesSnapshot = {
+      votes: Math.max(0, Number(votes || 0)),
+      source,
+      projectId: HELIOS_PROJECT_ID,
+      fetchedAt: new Date(lastVotesRefreshAtMs).toISOString()
+    };
+
+    return lastVotesSnapshot;
+  })().finally(() => {
+    votesRefreshPromise = null;
+  });
+
+  return votesRefreshPromise;
+}
 
 function symbolForStrategy(strategy) {
   return strategy === 'liquidity' ? 'SOLUSDT' : 'BTCUSDT';
@@ -1331,60 +1508,12 @@ app.get('/api/heartbeat', async (req, res) => {
 });
 
 app.get('/api/colosseum-votes', async (req, res) => {
-  const readCachedVotes = (extra = {}) => {
-    db.get(
-      "SELECT votesCount FROM agent_status ORDER BY lastFetch DESC LIMIT 1",
-      (_, row) => res.json({ votes: Number(row?.votesCount || 0), source: 'local-cache', ...extra })
-    );
-  };
-
-  const normalizeVotes = (payload = {}) => {
-    const fromStatusVotes = Number(
-      payload?.votes?.count ?? payload?.votes?.total ?? payload?.votes?.value ?? Number.NaN
-    );
-
-    if (Number.isFinite(fromStatusVotes)) {
-      return Math.max(0, fromStatusVotes);
-    }
-
-    const fromAgentVotes = Number(payload?.agent?.votesCount ?? payload?.agent?.votes ?? Number.NaN);
-    if (Number.isFinite(fromAgentVotes)) {
-      return Math.max(0, fromAgentVotes);
-    }
-
-    return null;
-  };
-
   try {
-    if (API_KEY) {
-      const statusRes = await colosseum.get('/agents/status');
-      let votes = normalizeVotes(statusRes?.data);
-
-      if (votes === null) {
-        const myProjectRes = await colosseum.get('/my-project').catch(() => ({ data: {} }));
-        const project = myProjectRes?.data?.project || {};
-        const projectVotes = Number((project.agentUpvotes || 0) + (project.humanUpvotes || 0));
-        votes = Number.isFinite(projectVotes) ? projectVotes : 0;
-      }
-
-      db.run(
-        `INSERT INTO agent_status(agentId, name, status, engagementScore, projectsCount, votesCount, lastFetch)
-         VALUES(?, ?, ?, ?, ?, ?, datetime('now'))`,
-        [
-          statusRes?.data?.agent?.id,
-          statusRes?.data?.agent?.name,
-          statusRes?.data?.agent?.status,
-          statusRes?.data?.engagement?.score || 0,
-          statusRes?.data?.projects?.count || 0,
-          votes
-        ]
-      );
-
-      return res.json({ votes, source: 'colosseum' });
-    }
-    return readCachedVotes();
+    const snapshot = await refreshVoteSnapshot();
+    return res.json(snapshot);
   } catch (e) {
-    return readCachedVotes({ error: 'colosseum-unavailable' });
+    const cached = await readCachedVotesSnapshot();
+    return res.json({ ...cached, error: 'colosseum-unavailable' });
   }
 });
 
@@ -1406,6 +1535,11 @@ function startServerWithFallback(preferredPort) {
       console.log(`📊 API: http://localhost:${targetPort}/api/trades`);
       console.log(`📈 Leaderboard: http://localhost:${targetPort}/api/leaderboard`);
       console.log(`🌐 Runtime live app link: ${runtimeLiveAppLink}`);
+
+      refreshVoteSnapshot({ force: true }).catch(() => null);
+      setInterval(() => {
+        refreshVoteSnapshot().catch(() => null);
+      }, Math.max(30000, VOTES_REFRESH_TTL_MS));
 
       if (Number(targetPort) !== Number(preferredPort)) {
         console.warn(`⚠️ Preferred port ${preferredPort} unavailable, using fallback port ${targetPort}`);
