@@ -481,6 +481,54 @@ async function commentOnPost(postId, message) {
   }
 }
 
+async function fetchLatestForumPostId() {
+  try {
+    if (!API_KEY) {
+      return null;
+    }
+
+    const res = await colosseum.get('/forum/posts?limit=10').catch(() => ({ data: {} }));
+    const posts = res?.data?.posts || res?.data?.data || [];
+
+    if (!Array.isArray(posts) || !posts.length) {
+      return null;
+    }
+
+    const candidate = posts.find((post) => Number(post?.id) > 0);
+    return candidate?.id || null;
+  } catch {
+    return null;
+  }
+}
+
+function buildForumComment(cycle) {
+  const messages = [
+    `Cycle ${cycle}: monitoring live BTC/SOL signals and refining execution quality.`,
+    `Cycle ${cycle}: sharing run telemetry and open to strategy feedback from builders.`,
+    `Cycle ${cycle}: continuous execution active with transparent logs and leaderboard tracking.`
+  ];
+  return messages[cycle % messages.length];
+}
+
+async function engageForum(cycle) {
+  if (!API_KEY) {
+    console.warn('⚠️ Skipping engageForum: COLOSSEUM_API_KEY/TRADING_API_KEY missing');
+    return;
+  }
+
+  const createdPost = await createForumPost();
+  const targetPostId = createdPost?.id || await fetchLatestForumPostId();
+
+  if (!targetPostId) {
+    console.warn('⚠️ Forum engagement: no target post available for comment');
+    return;
+  }
+
+  const commentMessage = buildForumComment(cycle);
+  await commentOnPost(targetPostId, commentMessage);
+  console.log(`📣 Forum engagement complete | cycle=${cycle} | postId=${targetPostId}`);
+}
+
 async function voteOnProject(projectId, value = 1) {
   try {
     if (!API_KEY) {
@@ -644,7 +692,7 @@ async function mainLoop() {
 
       // 6. Forum engagement
       if (cycle % 4 === 0) {
-        await createForumPost();
+        await engageForum(cycle);
       }
 
       // 7. Check for active polls
