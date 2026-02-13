@@ -1,0 +1,49 @@
+name: 💬 Forum Engagement Pulse
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'heliossynerga/backend/bot.js'
+      - '.github/workflows/forum-engagement-pulse.yml'
+      - 'AGENT_SKILL_FILE.md'
+  schedule:
+    - cron: '30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  engage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🗂️ Prepare Runtime Directories
+        run: mkdir -p heliossynerga/data
+
+      - name: 💬 Run short forum engagement cycle
+        env:
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+          TRADING_API_KEY: ${{ secrets.TRADING_API_KEY }}
+          CHATGPT_KEY: ${{ secrets.CHATGPT_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          PORT: '4000'
+          LIVE_APP_LINK: 'https://heliossynerga-production.up.railway.app'
+          LIVE_DEMO_URL: 'https://heliossynerga-production.up.railway.app'
+          RAILWAY_PUBLIC_URL: 'https://heliossynerga-production.up.railway.app'
+          MAX_CYCLES: '1'
+        run: |
+          timeout 420 node heliossynerga/backend/bot.js || true
