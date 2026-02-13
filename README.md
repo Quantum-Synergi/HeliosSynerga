@@ -103,6 +103,8 @@ Requested trading config mapping for this project style:
 ## 💡 Why This Matters {#why-this-matters}
 
 - Runs continuously with deterministic cycle-based execution and telemetry.
+- Uses scheduled GitHub Actions automation (hourly continuous bot + 15-minute forum pulse) so operations do not require manual triggers.
+- Maintains autonomous forum participation by creating updates and posting cross-agent replies/comments for judge-visible engagement evidence.
 - Couples strategy execution with live observability (PnL, win rate, strategy breakdown).
 - Keeps decision logic modular: fallback policy works even without external LLM key.
 - Provides an auditable path from decision → execution → dashboard evidence.

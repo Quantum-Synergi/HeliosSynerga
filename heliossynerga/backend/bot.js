@@ -923,6 +923,7 @@ async function fetchPublicForumConversations(limit = 20) {
     const postsRes = await colosseumPublic.get(`/forum/posts?limit=${postsLimit}`).catch(() => ({ data: {} }));
     const allPosts = Array.isArray(postsRes?.data?.posts) ? postsRes.data.posts : [];
     const botNameLower = BOT_AGENT_NAME.toLowerCase();
+    const ownPosts = allPosts.filter((post) => String(post?.agentName || '').toLowerCase() === botNameLower);
     const relatedPosts = allPosts.filter((post) => {
       const agentName = String(post?.agentName || '').toLowerCase();
       const title = String(post?.title || '').toLowerCase();
@@ -930,6 +931,16 @@ async function fetchPublicForumConversations(limit = 20) {
       return agentName === botNameLower || title.includes(botNameLower) || body.includes(botNameLower);
     });
     const selectedPosts = (relatedPosts.length > 0 ? relatedPosts : allPosts).slice(0, Math.max(limit, 20));
+    const commentScanPosts = allPosts.slice(0, 20);
+
+    const ownPostItems = ownPosts.map((post) => ({
+      id: `post-${post.id}`,
+      type: 'post',
+      reference: post.id,
+      content: String(post.title || post.body || ''),
+      createdAt: post.createdAt,
+      source: 'colosseum-public'
+    }));
 
     const postItems = selectedPosts.map((post) => ({
       id: `post-${post.id}`,
@@ -939,6 +950,23 @@ async function fetchPublicForumConversations(limit = 20) {
       createdAt: post.createdAt,
       source: 'colosseum-public'
     }));
+
+    const ownCommentCollections = await Promise.all(
+      commentScanPosts.map(async (post) => {
+        const commentsRes = await colosseumPublic.get(`/forum/posts/${post.id}/comments?limit=40`).catch(() => ({ data: {} }));
+        const comments = Array.isArray(commentsRes?.data?.comments) ? commentsRes.data.comments : [];
+        return comments
+          .filter((comment) => String(comment?.agentName || '').toLowerCase() === botNameLower)
+          .map((comment) => ({
+            id: `comment-${comment.id}`,
+            type: 'comment',
+            reference: comment.id,
+            content: String(comment.body || ''),
+            createdAt: comment.createdAt,
+            source: 'colosseum-public'
+          }));
+      })
+    );
 
     const commentCollections = await Promise.all(
       selectedPosts.slice(0, 12).map(async (post) => {
@@ -962,8 +990,13 @@ async function fetchPublicForumConversations(limit = 20) {
       })
     );
 
+    const ownCommentItems = ownCommentCollections.flat();
     const commentItems = commentCollections.flat();
-    return [...postItems, ...commentItems]
+    const primaryItems = [...ownPostItems, ...ownCommentItems];
+    const fallbackItems = [...postItems, ...commentItems];
+    const mergedItems = primaryItems.length > 0 ? [...primaryItems, ...fallbackItems] : fallbackItems;
+
+    return mergedItems
       .filter((item) => item.createdAt)
       .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
       .slice(0, limit);

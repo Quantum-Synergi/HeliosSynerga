@@ -8,7 +8,7 @@ on:
       - '.github/workflows/forum-engagement-pulse.yml'
       - 'AGENT_SKILL_FILE.md'
   schedule:
-    - cron: '30 * * * *'
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 jobs:
