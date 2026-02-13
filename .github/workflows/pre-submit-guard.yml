@@ -1,0 +1,35 @@
+name: 🛡️ Pre-Submit Guard
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'scripts/pre-submit-check.mjs'
+      - '.github/workflows/pre-submit-guard.yml'
+      - 'heliossynerga/backend/**'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: ✅ Validate Claim + Submission Fields
+        env:
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+        run: npm run precheck:submit

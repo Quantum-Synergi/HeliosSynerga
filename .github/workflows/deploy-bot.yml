@@ -19,11 +19,13 @@ jobs:
       - name: 🔧 Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: '20'
       
       - name: 📦 Install Dependencies
-        run: npm install
+        run: npm ci
+
+      - name: 🗂️ Prepare Runtime Directories
+        run: mkdir -p heliossynerga/data
       
       - name: 🔐 Create .env from Secrets
         env:

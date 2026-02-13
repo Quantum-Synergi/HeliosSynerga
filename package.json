@@ -8,7 +8,9 @@
     "start": "node heliossynerga/backend/bot.js",
     "dashboard": "live-server heliossynerga/dashboard --port 5500",
     "dev": "concurrently \"node heliossynerga/backend/bot.js\" \"live-server heliossynerga/dashboard --port 5500 --open\"",
-    "install-deps": "npm install"
+    "install-deps": "npm install",
+    "audit:colosseum": "node scripts/colosseum-audit.mjs",
+    "precheck:submit": "node scripts/pre-submit-check.mjs"
   },
   "keywords": ["trading", "bot", "solana", "defi", "ai"],
   "author": "HeliosSynerga",

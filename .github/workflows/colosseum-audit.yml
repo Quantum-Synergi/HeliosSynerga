@@ -1,0 +1,55 @@
+name: ✅ Colosseum Authenticated Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      probe_forum:
+        description: "Run forum post/comment/vote probe"
+        required: false
+        default: "true"
+      probe_vote:
+        description: "Run project vote/unvote probe"
+        required: false
+        default: "true"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🔍 Run Colosseum Audit
+        env:
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+          CHATGPT_KEY: ${{ secrets.CHATGPT_KEY }}
+          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          set -e
+          ARGS=""
+          if [ "${{ github.event.inputs.probe_forum || 'true' }}" = "true" ]; then
+            ARGS="$ARGS --probe-forum"
+          fi
+          if [ "${{ github.event.inputs.probe_vote || 'true' }}" = "true" ]; then
+            ARGS="$ARGS --probe-vote"
+          fi
+          echo "Running: npm run audit:colosseum -- $ARGS"
+          npm run audit:colosseum -- $ARGS | tee audit-output.txt
+
+      - name: 📤 Upload Audit Output
+        uses: actions/upload-artifact@v4
+        with:
+          name: colosseum-audit-output
+          path: audit-output.txt

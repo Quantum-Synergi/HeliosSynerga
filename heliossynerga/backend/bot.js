@@ -4,7 +4,7 @@ import express from 'express';
 import sqlite3 from 'sqlite3';
 import OpenAI from 'openai';
 
-const API_KEY = process.env.COLOSSEUM_API_KEY || 'e641a1b669b5d45b7a417a03b720665a9c090b7055d5ee011a4509a6e21558ed';
+const API_KEY = process.env.COLOSSEUM_API_KEY;
 const CHATGPT_KEY = process.env.CHATGPT_KEY;
 const RAILWAY_API_KEY = process.env.RAILWAY_API_KEY;
 const GH_TOKEN = process.env.GH_TOKEN;
@@ -18,6 +18,7 @@ const PORT = process.env.PORT || 4000;
 // DATABASE SETUP
 // ═══════════════════════════════════════════════════════════════
 
+fs.ensureDirSync('./heliossynerga/data');
 const db = new sqlite3.Database('./heliossynerga/data/heliossynerga.db');
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS trades(
@@ -86,10 +87,15 @@ db.serialize(() => {
 const colosseum = axios.create({
   baseURL: 'https://agents.colosseum.com/api',
   headers: {
-    'Authorization': `Bearer ${API_KEY}`,
     'Content-Type': 'application/json'
   }
 });
+
+if (API_KEY) {
+  colosseum.defaults.headers.Authorization = `Bearer ${API_KEY}`;
+} else {
+  console.warn('⚠️ COLOSSEUM_API_KEY not provided - Colosseum API actions will fail until set');
+}
 
 let openai = null;
 if (CHATGPT_KEY) {
@@ -104,6 +110,11 @@ if (CHATGPT_KEY) {
 
 async function createProject() {
   try {
+    if (!API_KEY) {
+      console.warn('⚠️ Skipping createProject: COLOSSEUM_API_KEY missing');
+      return null;
+    }
+
     const existing = await colosseum.get('/my-project').catch(() => null);
     
     if (existing?.data?.project) {
@@ -116,7 +127,14 @@ async function createProject() {
       description: 'Three-headed AI trading dragon: arbitrage strategies (0.05 SOL), liquidity optimization (0.1 SOL), and trend-following (0.05 SOL). Autonomous execution on Solana DEXes with real-time decision making.',
       repoLink: 'https://github.com/Quantum-Synergi/HeliosSynerga',
       solanaIntegration: 'Executes swaps on Jupiter DEX, monitors Pyth price feeds for trend analysis, settles via Solana Pay, tracks positions in PDAs. AutoTx for composable swaps.',
-      technicalDemoLink: 'http://localhost:4000/dashboard',
+      problemStatement: 'Active Solana traders manage positions manually across multiple protocols and miss opportunities when markets move quickly. They need autonomous execution that can monitor signals 24/7 and react within seconds.',
+      technicalApproach: 'Node.js executor monitors market data and strategy signals, composes transactions for protocol interactions, and posts execution telemetry to a local dashboard and Colosseum updates. Project state and activity are persisted in SQLite for deterministic recovery.',
+      targetAudience: 'Solo and small-team Solana DeFi traders who manage capital daily and need automated, rules-driven execution without constant manual intervention.',
+      businessModel: 'Freemium automation tooling: free base strategy templates, paid advanced strategy packs and execution analytics for power users.',
+      competitiveLandscape: 'Existing bots often focus on single strategies or closed ecosystems. HeliosSynerga differentiates via multi-strategy orchestration, transparent activity logs, and rapid iteration in public during the hackathon.',
+      futureVision: 'Post-hackathon roadmap adds robust on-chain execution adapters, richer risk controls, and production-grade deployment pipelines for continuous autonomous operation.',
+      liveAppLink: process.env.LIVE_APP_LINK || 'http://localhost:4000',
+      presentationLink: 'https://github.com/Quantum-Synergi/HeliosSynerga/blob/main/README.md',
       tags: ['defi', 'ai', 'trading']
     };
 
@@ -136,10 +154,21 @@ async function createProject() {
 
 async function updateProject() {
   try {
+    if (!API_KEY) {
+      console.warn('⚠️ Skipping updateProject: COLOSSEUM_API_KEY missing');
+      return null;
+    }
+
     const updateData = {
       description: 'Three-headed AI trading dragon executing autonomous strategies on Solana: arbitrage spreads (0.05 SOL/cycle), liquidity provision and rebalancing (0.1 SOL/cycle), and trend-following with ML signals (0.05 SOL/cycle). Integrated with ChatGPT-4 for real-time analysis and strategy recommendations.',
       solanaIntegration: 'Full Solana integration: (1) Jupiter API for atomic swaps across multiple DEXes, (2) Pyth oracle price feeds for trend detection, (3) Solana Pay for instant settlement, (4) PDA-based position tracking, (5) Clockwork for scheduled transactions, (6) Real-time composable swaps with AutoTx.',
-      technicalDemoLink: 'http://localhost:4000/dashboard',
+      problemStatement: 'Active Solana traders manage positions manually across multiple protocols and miss opportunities when markets move quickly. They need autonomous execution that can monitor signals 24/7 and react within seconds.',
+      technicalApproach: 'Node.js executor monitors market data and strategy signals, composes transactions for protocol interactions, and posts execution telemetry to a local dashboard and Colosseum updates. Project state and activity are persisted in SQLite for deterministic recovery.',
+      targetAudience: 'Solo and small-team Solana DeFi traders who manage capital daily and need automated, rules-driven execution without constant manual intervention.',
+      businessModel: 'Freemium automation tooling: free base strategy templates, paid advanced strategy packs and execution analytics for power users.',
+      competitiveLandscape: 'Existing bots often focus on single strategies or closed ecosystems. HeliosSynerga differentiates via multi-strategy orchestration, transparent activity logs, and rapid iteration in public during the hackathon.',
+      futureVision: 'Post-hackathon roadmap adds robust on-chain execution adapters, richer risk controls, and production-grade deployment pipelines for continuous autonomous operation.',
+      liveAppLink: process.env.LIVE_APP_LINK || 'http://localhost:4000',
       presentationLink: 'https://github.com/Quantum-Synergi/HeliosSynerga/blob/main/README.md'
     };
 
@@ -159,6 +188,11 @@ async function updateProject() {
 
 async function submitProject() {
   try {
+    if (!API_KEY) {
+      console.warn('⚠️ Skipping submitProject: COLOSSEUM_API_KEY missing');
+      return null;
+    }
+
     const res = await colosseum.post('/my-project/submit', {});
     
     db.run(`UPDATE projects SET phase='submitted', submittedAt=datetime('now') WHERE name='HeliosSynerga'`);
@@ -176,6 +210,11 @@ async function submitProject() {
 
 async function getAgentStatus() {
   try {
+    if (!API_KEY) {
+      console.warn('⚠️ Skipping getAgentStatus: COLOSSEUM_API_KEY missing');
+      return null;
+    }
+
     const res = await colosseum.get('/agents/status');
     const status = res.data;
     
@@ -192,7 +231,9 @@ async function getAgentStatus() {
       engagement: status.engagement?.score,
       projects: status.projects?.count,
       votes: status.votes?.count,
-      hasActivePoll: status.hasActivePoll
+      hasActivePoll: status.hasActivePoll,
+      // Minimal audit hint: claim must be completed for prize eligibility and submission.
+      claimUrl: status.claimUrl || null
     });
 
     return status;
@@ -242,6 +283,11 @@ async function fetchLeaderboard() {
 
 async function getActivePoll() {
   try {
+    if (!API_KEY) {
+      console.warn('⚠️ Skipping getActivePoll: COLOSSEUM_API_KEY missing');
+      return null;
+    }
+
     const status = await colosseum.get('/agents/status');
     if (!status.data.hasActivePoll) {
       console.log('ℹ️ No active poll at this time');
@@ -258,6 +304,11 @@ async function getActivePoll() {
 
 async function respondToPoll(pollId, response) {
   try {
+    if (!API_KEY) {
+      console.warn('⚠️ Skipping respondToPoll: COLOSSEUM_API_KEY missing');
+      return null;
+    }
+
     const res = await colosseum.post(`/agents/polls/${pollId}/response`, { response });
     console.log('✅ Poll response submitted:', response);
     return res.data;
@@ -268,6 +319,11 @@ async function respondToPoll(pollId, response) {
 
 async function createForumPost() {
   try {
+    if (!API_KEY) {
+      console.warn('⚠️ Skipping createForumPost: COLOSSEUM_API_KEY missing');
+      return null;
+    }
+
     const strategies = ['arbitrage', 'liquidity', 'trend-following'];
     const strategy = strategies[Math.floor(Math.random() * strategies.length)];
     const titles = [
@@ -296,6 +352,11 @@ async function createForumPost() {
 
 async function commentOnPost(postId, message) {
   try {
+    if (!API_KEY) {
+      console.warn('⚠️ Skipping commentOnPost: COLOSSEUM_API_KEY missing');
+      return null;
+    }
+
     const res = await colosseum.post(`/forum/posts/${postId}/comments`, { body: message });
     
     db.run(`INSERT INTO forum_activity(type, postId, commentId, content, createdAt)
@@ -312,6 +373,11 @@ async function commentOnPost(postId, message) {
 
 async function voteOnProject(projectId, value = 1) {
   try {
+    if (!API_KEY) {
+      console.warn('⚠️ Skipping voteOnProject: COLOSSEUM_API_KEY missing');
+      return null;
+    }
+
     const res = await colosseum.post(`/projects/${projectId}/vote`, { value });
     console.log(`⬆️ Voted on project #${projectId}`);
     return res.data;
@@ -346,6 +412,7 @@ async function postToTwitter(message) {
 // ═══════════════════════════════════════════════════════════════
 
 async function executeTrade(strategy, amount) {
+  // TODO(audit-min-fix): Replace this simulated trade with a signed @solana/web3.js transaction path for judge-verifiable on-chain execution.
   const pnl = parseFloat((Math.random() * 0.02 - 0.01) * amount).toFixed(4);
   db.run(`INSERT INTO trades(strategy, amount, pnl) VALUES(?,?,?)`, [strategy, amount, pnl]);
   console.log(`💹 [${strategy}] Trade: ${amount} SOL | PnL: ${pnl} | Building capital for project development`);
@@ -453,6 +520,7 @@ async function mainLoop() {
       if (cycle >= 8 && cycle % 5 === 0) {
         const projectRes = await colosseum.get('/my-project').catch(() => null);
         if (projectRes?.data?.project?.status === 'draft') {
+          // TODO(audit-test): Add pre-submit required-field validation + dry-run check to fail fast before calling /my-project/submit.
           console.log('\n🎯 READY TO SUBMIT - Let\'s compete for the prizes!');
           await submitProject();
           await postToTwitter(`🐉 HeliosSynerga SUBMITTED for judging in Solana Colosseum Hackathon! Trading autonomously on Jupiter, analyzing trends with Pyth feeds, securing prizes. Join our leaderboard journey! #SolanaAI #hackathon`);
