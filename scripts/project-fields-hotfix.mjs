@@ -48,7 +48,7 @@ function resolveLiveAppLink() {
 const payload = {
   description:
     process.env.PROJECT_DESCRIPTION ||
-    'Autonomous AI trading agent executing BTC/SOL-oriented strategy cycles with risk management, live telemetry, and continuous decisioning. Colosseum Project ID: 621.',
+    'HeliosSynerga is an autonomous Solana trading system that executes disciplined BTC/SOL strategy cycles with risk controls, continuous telemetry, and transparent operational reporting. It is designed for reliable 24/7 decision support and measurable execution quality in live market conditions. Colosseum Project ID: 621.',
   repoLink: 'https://github.com/Quantum-Synergi/HeliosSynerga',
   solanaIntegration:
     process.env.SOLANA_INTEGRATION ||
