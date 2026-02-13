@@ -1,5 +1,4 @@
 # 🏆 HeliosSynerga -> Colosseum Agent Hackathon Submission - [View on Colosseum](https://colosseum.com/agent-hackathon/projects/heliossynerga)
-🎥 Live monitoring links (Colosseum, GitHub Pages/Codespaces dashboard, Railway): see `MONITORING_LINKS.md`
 
 ---
 
@@ -163,5 +162,5 @@ Submission Status : running locally; API-linked submission requires COLOSSEUM_AP
 Bot Process   : RUNNING (node heliossynerga/backend/bot.js)
 API Status    : /api/status => {"status":"running"}
 Trades Feed   : /api/trades returning live records
-Last Verified : 2026-02-13
+Last Verified : 2026-02-12
 ```
