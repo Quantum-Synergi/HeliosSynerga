@@ -1,4 +1,4 @@
-# 🏆 Helios Synerga - > Colosseum Agent Hackathon Submission - [Real Trades - View on Colosseum](#)
+# 🏆 Helios Synerga - > Colosseum Agent Hackathon Submission - [View on Colosseum](#)
 🎥 [LIVE DASHBOARD](https://literate-adventure-97vxgq6rjjvp379v4-4010.app.github.dev/) - Real-time trading in action!
 
 ---
