@@ -284,6 +284,18 @@
       background: rgba(255, 255, 255, 0.03);
     }
 
+    .status-open {
+      color: #99f6e4;
+      border-color: rgba(45, 212, 191, 0.55);
+      background: rgba(45, 212, 191, 0.14);
+    }
+
+    .status-closed {
+      color: #fecdd3;
+      border-color: rgba(251, 113, 133, 0.55);
+      background: rgba(251, 113, 133, 0.14);
+    }
+
     .footer {
       text-align: center;
       color: var(--cruip-muted);
@@ -478,6 +490,7 @@
                   <th>Strategy</th>
                   <th>Size</th>
                   <th>PnL</th>
+                  <th>Status</th>
                   <th>Time</th>
                 </tr>
               </thead>
@@ -940,27 +953,33 @@
       target.textContent = `Heartbeat: ${agentStatus} | project: ${projectStatus} | synced: ${heartbeatTime}`;
     }
 
-    function renderPositions(trades) {
-      const rows = trades.slice(0, 20).map((trade) => {
-        const symbol = mapSymbol(trade.strategy);
-        const pnl = Number(trade.pnl || 0);
+    function renderPositions(positionRows) {
+      const rows = positionRows.slice(0, 20).map((position) => {
+        const symbol = position.symbol || mapSymbol(position.strategy);
+        const pnl = Number(position.pnl || 0);
         const pnlClass = pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+        const status = String(position.status || 'Closed');
+        const isOpen = status.toLowerCase() === 'open';
+        const statusClass = isOpen ? 'status-open' : 'status-closed';
+        const statusLabel = `${isOpen ? 'Open 🟢' : 'Closed 🔴'}`;
+        const timestamp = position.timestamp || position.createdAt;
 
         return `
           <tr>
-            <td>${trade.id}</td>
+            <td>${position.id}</td>
             <td>${symbol}</td>
-            <td>${trade.strategy}</td>
-            <td>${Number(trade.amount || 0).toFixed(2)} SOL</td>
+            <td>${position.strategy}</td>
+            <td>${Number(position.amount || position.sizeSol || 0).toFixed(2)} SOL</td>
             <td class="${pnlClass}">${formatSigned(pnl)} SOL</td>
-            <td>${new Date(trade.timestamp).toLocaleTimeString()}</td>
+            <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
+            <td>${timestamp ? new Date(timestamp).toLocaleTimeString() : '-'}</td>
           </tr>
         `;
       }).join('');
 
       document.getElementById('positionsBody').innerHTML = rows || `
         <tr>
-          <td colspan="6" style="color:#98a2b8;">No positions in current runtime state.</td>
+          <td colspan="7" style="color:#98a2b8;">No positions in current runtime state.</td>
         </tr>
       `;
     }
@@ -1023,8 +1042,9 @@
     }
 
     async function refreshDashboard() {
-      const [trades, votesPayload, activityPayload, heartbeatPayload, walletStatsPayload, pnlSeriesPayload, tradingSettingsPayload] = await Promise.all([
+      const [trades, livePositionsPayload, votesPayload, activityPayload, heartbeatPayload, walletStatsPayload, pnlSeriesPayload, tradingSettingsPayload] = await Promise.all([
         fetchJson('/api/trades', []),
+        fetchJson('/api/positions-live', { items: [] }),
         fetchJson('/api/colosseum-votes', { votes: 0 }),
         fetchJson('/api/activity', { items: [] }),
         fetchJson('/api/heartbeat', { ok: false }),
@@ -1049,6 +1069,9 @@
       const votes = Number(votesPayload?.votes || 0);
       const apiSource = votesPayload?.source || 'unknown';
       const degraded = Boolean(votesPayload?.error);
+      const livePositions = Array.isArray(livePositionsPayload?.items)
+        ? livePositionsPayload.items
+        : [];
       const activityRows = Array.isArray(activityPayload)
         ? activityPayload
         : Array.isArray(activityPayload?.items)
@@ -1056,7 +1079,7 @@
           : [];
 
       renderMetrics(trades, votes, walletStatsPayload);
-      renderPositions(trades);
+      renderPositions(livePositions);
       renderActivity(activityRows);
 
       const btcCandles = buildCandlesFromTrades(trades, 'BTCUSDT');

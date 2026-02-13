@@ -729,6 +729,121 @@ function dbAllAsync(sql, params = []) {
   });
 }
 
+const DEXSCREENER_TOKEN_API = 'https://api.dexscreener.com/latest/dex/tokens';
+const LIVE_SYMBOL_TOKEN_MAP = {
+  BTCUSDT: '9n4nbM75f5Ui33ZbPYXn59EwSgE8CGsHtAeTH5YFeJ9E',
+  SOLUSDT: 'So11111111111111111111111111111111111111112'
+};
+const USD_QUOTES = new Set(['USDC', 'USDT', 'USDS', 'USDH', 'USDC.E']);
+let latestLivePriceSnapshot = null;
+let lastLivePriceLogAtMs = 0;
+
+function symbolForStrategy(strategy) {
+  return strategy === 'liquidity' ? 'SOLUSDT' : 'BTCUSDT';
+}
+
+function pickBestSolanaPair(pairs = []) {
+  const solanaPairs = pairs.filter((pair) => String(pair?.chainId || '').toLowerCase() === 'solana');
+  if (!solanaPairs.length) {
+    return null;
+  }
+
+  const usdPairs = solanaPairs.filter((pair) => USD_QUOTES.has(String(pair?.quoteToken?.symbol || '').toUpperCase()));
+  const candidatePairs = usdPairs.length ? usdPairs : solanaPairs;
+
+  return candidatePairs
+    .slice()
+    .sort((left, right) => Number(right?.liquidity?.usd || 0) - Number(left?.liquidity?.usd || 0))[0] || null;
+}
+
+async function fetchSolanaPrices(symbols = ['BTCUSDT', 'SOLUSDT']) {
+  const requested = Array.from(new Set(symbols)).filter((symbol) => LIVE_SYMBOL_TOKEN_MAP[symbol]);
+  const prices = {};
+
+  await Promise.all(
+    requested.map(async (symbol) => {
+      const tokenAddress = LIVE_SYMBOL_TOKEN_MAP[symbol];
+
+      try {
+        const response = await axios.get(`${DEXSCREENER_TOKEN_API}/${tokenAddress}`, {
+          timeout: 12000,
+          headers: {
+            Accept: 'application/json'
+          }
+        });
+
+        const bestPair = pickBestSolanaPair(response?.data?.pairs || []);
+        const priceUsd = Number(bestPair?.priceUsd || Number.NaN);
+
+        if (Number.isFinite(priceUsd) && priceUsd > 0) {
+          prices[symbol] = priceUsd;
+        }
+
+        const now = Date.now();
+        if (now - lastLivePriceLogAtMs >= 30000) {
+          console.log('📡 Live Solana market data:', {
+            symbol,
+            endpoint: `${DEXSCREENER_TOKEN_API}/${tokenAddress}`,
+            pairAddress: bestPair?.pairAddress || null,
+            dexId: bestPair?.dexId || null,
+            quote: bestPair?.quoteToken?.symbol || null,
+            priceUsd: Number.isFinite(priceUsd) ? priceUsd : null
+          });
+        }
+      } catch (error) {
+        console.error(`❌ Live market fetch failed for ${symbol}:`, error.message || error);
+      }
+    })
+  );
+
+  lastLivePriceLogAtMs = Date.now();
+
+  return {
+    prices,
+    source: 'dexscreener-solana',
+    fetchedAt: new Date().toISOString()
+  };
+}
+
+function generatePositionsFromLiveData(trades = [], liveSnapshot = null, previousSnapshot = null) {
+  const currentPrices = liveSnapshot?.prices || {};
+  const previousPrices = previousSnapshot?.prices || currentPrices;
+  const latestTradeIdByStrategy = new Map();
+
+  for (const trade of trades) {
+    if (!latestTradeIdByStrategy.has(trade.strategy)) {
+      latestTradeIdByStrategy.set(trade.strategy, trade.id);
+    }
+  }
+
+  return trades.map((trade) => {
+    const symbol = symbolForStrategy(trade.strategy);
+    const currentPriceUsd = Number(currentPrices[symbol] || Number.NaN);
+    const previousPriceUsd = Number(previousPrices[symbol] || currentPriceUsd);
+    const amountSol = Number(trade.amount || 0);
+    const changePct = Number.isFinite(currentPriceUsd) && Number.isFinite(previousPriceUsd) && previousPriceUsd > 0
+      ? (currentPriceUsd - previousPriceUsd) / previousPriceUsd
+      : 0;
+    const livePnlSol = amountSol * changePct;
+    const isLatestForStrategy = latestTradeIdByStrategy.get(trade.strategy) === trade.id;
+
+    return {
+      id: trade.id,
+      symbol,
+      strategy: trade.strategy,
+      amount: amountSol,
+      pnl: livePnlSol,
+      status: isLatestForStrategy ? 'Open' : 'Closed',
+      timestamp: trade.timestamp,
+      market: {
+        currentPriceUsd: Number.isFinite(currentPriceUsd) ? currentPriceUsd : null,
+        previousPriceUsd: Number.isFinite(previousPriceUsd) ? previousPriceUsd : null,
+        changePct
+      }
+    };
+  });
+}
+
 async function resolveWalletAllowanceSol() {
   if (!API_KEY) {
     return {
@@ -848,6 +963,23 @@ app.get('/api/trades', (req, res) =>
     res.json(rows || [])
   )
 );
+
+app.get('/api/positions-live', async (req, res) => {
+  const trades = await dbAllAsync(
+    'SELECT id, strategy, amount, pnl, timestamp FROM trades ORDER BY timestamp DESC LIMIT 100'
+  );
+
+  const liveSnapshot = await fetchSolanaPrices(['BTCUSDT', 'SOLUSDT']);
+  const previousSnapshot = latestLivePriceSnapshot || liveSnapshot;
+  const items = generatePositionsFromLiveData(trades, liveSnapshot, previousSnapshot);
+  latestLivePriceSnapshot = liveSnapshot;
+
+  return res.json({
+    items,
+    count: items.length,
+    market: liveSnapshot
+  });
+});
 
 app.get('/api/forum', (req, res) =>
   db.all("SELECT * FROM forum_activity ORDER BY createdAt DESC LIMIT 50", (_, rows) => 
