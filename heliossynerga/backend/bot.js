@@ -588,6 +588,13 @@ const app = express();
 
 app.use(express.static('./heliossynerga/dashboard'));
 
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 app.get('/', (req, res) => {
   res.sendFile('index.html', { root: './heliossynerga/dashboard' });
 });
@@ -621,6 +628,14 @@ app.get('/api/status', (req, res) =>
     res.json(rows?.[0] || { status: 'running' })
   )
 );
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    ok: true,
+    service: 'heliossynerga-dashboard-api',
+    timestamp: new Date().toISOString()
+  });
+});
 
 app.get('/api/colosseum-votes', async (req, res) => {
   const readCachedVotes = (extra = {}) => {

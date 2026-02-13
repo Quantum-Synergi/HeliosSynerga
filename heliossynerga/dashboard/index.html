@@ -291,6 +291,12 @@
       padding-bottom: 0.5rem;
     }
 
+    .sync-line {
+      margin-top: 0.35rem;
+      font-size: 0.72rem;
+      color: #90a0bc;
+    }
+
     .footer a {
       color: #b8c3dc;
       text-decoration: none;
@@ -464,10 +470,13 @@
     <footer class="footer">
       Technical details:
       <a href="https://github.com/Quantum-Synergi/HeliosSynerga" target="_blank" rel="noopener noreferrer">https://github.com/Quantum-Synergi/HeliosSynerga</a>
+      <div id="apiSyncStatus" class="sync-line">API sync: connecting...</div>
     </footer>
   </main>
 
   <script>
+    let lastApiSync = null;
+
     function formatSigned(value) {
       const number = Number(value || 0);
       const sign = number >= 0 ? '+' : '';
@@ -597,12 +606,31 @@
 
     async function fetchJson(url, fallback) {
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        });
         if (!response.ok) return fallback;
         return await response.json();
       } catch {
         return fallback;
       }
+    }
+
+    function updateApiSyncStatus({ ok, source = 'unknown', note = '' }) {
+      const target = document.getElementById('apiSyncStatus');
+      if (!target) return;
+
+      if (ok) {
+        lastApiSync = new Date();
+      }
+
+      const syncTime = lastApiSync ? lastApiSync.toLocaleTimeString() : 'never';
+      const state = ok ? 'LIVE' : 'DEGRADED';
+      const suffix = note ? ` | ${note}` : '';
+      target.textContent = `API sync: ${state} | source: ${source} | last update: ${syncTime}${suffix}`;
     }
 
     function renderPositions(trades) {
@@ -682,6 +710,9 @@
       ]);
 
       const votes = Number(votesPayload?.votes || 0);
+      const apiSource = votesPayload?.source || 'unknown';
+      const degraded = Boolean(votesPayload?.error);
+
       renderMetrics(trades, votes);
       renderPositions(trades);
       renderActivity(forumActivity);
@@ -690,6 +721,12 @@
       const solCandles = buildCandlesFromTrades(trades, 'SOLUSDT');
       drawCandles('btcChart', btcCandles);
       drawCandles('solChart', solCandles);
+
+      updateApiSyncStatus({
+        ok: !degraded,
+        source: apiSource,
+        note: degraded ? 'votes fallback active' : ''
+      });
     }
 
     refreshDashboard();
