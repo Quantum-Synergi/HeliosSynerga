@@ -74,7 +74,6 @@ const payload = {
   liveAppLink: resolveLiveAppLink(),
   liveDemo: resolveLiveAppLink(),
   liveDemoLink: resolveLiveAppLink(),
-  technicalDemoLink: resolveLiveAppLink(),
   presentationLink:
     process.env.PRESENTATION_LINK ||
     'https://github.com/Quantum-Synergi/HeliosSynerga/blob/main/README.md',

@@ -76,7 +76,6 @@ async function run() {
     liveAppLink: LIVE_DEMO,
     liveDemo: LIVE_DEMO,
     liveDemoLink: LIVE_DEMO,
-    technicalDemoLink: LIVE_DEMO,
     repoLink: GITHUB_URL,
     github: GITHUB_URL,
     solanaIntegration: MINIMAL_SOLANA_TEXT,
