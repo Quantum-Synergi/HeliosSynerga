@@ -1,374 +1,583 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🐉 HeliosSynerga Bot Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QANTUMSYNERGI Enterprise Trading Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg0: #0a0e1a;
+      --bg1: #1a1f2e;
+      --panel: rgba(26, 31, 46, 0.9);
+      --panel-soft: rgba(20, 24, 36, 0.75);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #e8edf7;
+      --muted: #93a0b8;
+      --accent: #4dd4a0;
+      --danger: #ff5f6d;
+      --warn: #f7b955;
+      --shadow: 0 32px 64px rgba(0, 0, 0, 0.4);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #1e1e2f 0%, #2a2a3e 100%);
-      color: #fff;
-      padding: 20px;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 100%);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
+
+    .trading-terminal {
+      display: grid;
+      grid-template-areas:
+        "header header"
+        "charts charts"
+        "metrics positions";
+      grid-template-columns: 3fr 4fr;
+      grid-template-rows: 80px 70vh minmax(220px, 1fr);
+      height: 100vh;
+      gap: 24px;
+      padding: 24px;
+    }
+
+    .glass {
+      backdrop-filter: blur(20px);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
     .header {
-      text-align: center;
-      margin-bottom: 30px;
-      border-bottom: 3px solid #ffcc00;
-      padding-bottom: 20px;
+      grid-area: header;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
     }
-    h1 { font-size: 2.5em; color: #ffcc00; margin-bottom: 10px; }
-    .status {
-      font-size: 1.1em;
-      padding: 10px 20px;
-      background: #28a745;
-      border-radius: 5px;
-      display: inline-block;
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      font-size: 22px;
     }
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
+
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 8px rgba(77, 212, 160, 0.14);
+    }
+
+    .header-metrics {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      font-weight: 600;
+    }
+
+    .header-metrics span {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .header-metrics strong {
+      font-size: 22px;
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .charts {
+      grid-area: charts;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      gap: 24px;
     }
-    .card {
-      background: #2a2a3e;
-      border: 2px solid #444;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+
+    .chart-panel {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      background: #0f141f;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
     }
-    .card h2 {
-      color: #ffcc00;
-      margin-bottom: 15px;
-      border-bottom: 2px solid #444;
-      padding-bottom: 10px;
+
+    .chart-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-weight: 700;
     }
-    .chart-container {
-      position: relative;
-      height: 300px;
-      margin-bottom: 20px;
+
+    .chart-head small {
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 12px;
     }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      background: #0f141f;
+    }
+
+    .metrics {
+      grid-area: metrics;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .metric-card {
+      backdrop-filter: blur(20px);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      min-height: 118px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.28);
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .metric-value {
+      font-size: clamp(28px, 4vw, 36px);
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .positions {
+      grid-area: positions;
+      padding: 14px;
+      overflow: hidden;
+    }
+
+    .positions h3 {
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.9em;
+      font-size: 13px;
+      overflow: hidden;
     }
-    th, td {
-      border: 1px solid #444;
-      padding: 10px;
+
+    th,
+    td {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 10px 8px;
       text-align: left;
+      white-space: nowrap;
     }
+
     th {
-      background: #1a1a2a;
-      color: #ffcc00;
-      font-weight: bold;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      position: sticky;
+      top: 0;
+      background: rgba(15, 20, 31, 0.92);
     }
-    tr:nth-child(even) { background: #333342; }
-    tr:hover { background: #3a3a4e; }
-    .rank-1 { color: #ffd700; font-weight: bold; }
-    .rank-2 { color: #c0c0c0; font-weight: bold; }
-    .rank-3 { color: #cd7f32; font-weight: bold; }
-    .our-project { background: #2a4a2a; }
-    .phase-draft { color: #ffa500; }
-    .phase-submitted { color: #28a745; }
-    .phase-active { color: #00bfff; }
-    .scroll-table {
-      max-height: 400px;
-      overflow-y: auto;
+
+    .table-wrap {
+      max-height: 100%;
+      overflow: auto;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(15, 20, 31, 0.5);
     }
-    .full-width {
-      grid-column: 1 / -1;
+
+    .pnl-pos { color: var(--accent); font-weight: 700; }
+    .pnl-neg { color: var(--danger); font-weight: 700; }
+    .status-pill {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 11px;
+      color: #d6deef;
+      display: inline-block;
     }
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      margin-bottom: 20px;
+
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
     }
-    .stat-box {
-      background: #1a1a2a;
-      padding: 15px;
-      border-radius: 5px;
-      text-align: center;
+
+    @media (max-width: 1100px) {
+      .trading-terminal {
+        grid-template-areas:
+          "header"
+          "charts"
+          "metrics"
+          "positions";
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto 1fr;
+        height: auto;
+        min-height: 100vh;
+      }
+
+      .charts {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-panel {
+        min-height: 320px;
+      }
+
+      .metrics {
+        grid-template-columns: 1fr 1fr;
+      }
     }
-    .stat-value { font-size: 1.8em; color: #ffcc00; font-weight: bold; }
-    .stat-label { font-size: 0.85em; color: #aaa; }
-    .tweets { 
-      background: #1a1a2a; 
-      padding: 10px; 
-      margin: 10px 0; 
-      border-left: 4px solid #ffcc00;
-      border-radius: 3px;
+
+    @media (max-width: 700px) {
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .header-metrics {
+        gap: 16px;
+      }
+
+      .metrics {
+        grid-template-columns: 1fr;
+      }
     }
-    .tweet-text { font-size: 0.9em; line-height: 1.4; }
   </style>
 </head>
 <body>
-
-<div class="header">
-  <h1>🐉 HeliosSynerga Autonomous Trading Bot</h1>
-  <p>Solana Colosseum Hackathon - Feb 2-12, 2026</p>
-  <div class="status" id="status">● RUNNING (Cycle: --)</div>
-</div>
-
-<div class="container">
-
-  <!-- PROJECT STATUS -->
-  <div class="card">
-    <h2>📋 Project Status</h2>
-    <div class="stats">
-      <div class="stat-box">
-        <div class="stat-label">Phase</div>
-        <div class="stat-value phase-draft" id="phase">DRAFT</div>
+  <main class="trading-terminal">
+    <header class="header glass">
+      <div class="brand">
+        <span>QANTUMSYNERGI</span>
+        <span class="live-dot"></span>
+        <span class="muted">LIVE</span>
       </div>
-      <div class="stat-box">
-        <div class="stat-label">Rank</div>
-        <div class="stat-value" id="rank">--</div>
+      <div class="header-metrics">
+        <div>
+          <span>Total PnL</span>
+          <strong id="headerPnL">0.0000 SOL</strong>
+        </div>
+        <div>
+          <span>Win Rate</span>
+          <strong id="headerWinRate">0.0%</strong>
+        </div>
       </div>
-      <div class="stat-box">
-        <div class="stat-label">Votes</div>
-        <div class="stat-value" id="votes">0</div>
+    </header>
+
+    <section class="charts">
+      <article class="chart-panel">
+        <div class="chart-head">
+          <div>BTCUSDT</div>
+          <small>Candlestick-style from real bot trade ticks</small>
+        </div>
+        <canvas id="btcChart"></canvas>
+      </article>
+      <article class="chart-panel">
+        <div class="chart-head">
+          <div>SOLUSDT</div>
+          <small>Candlestick-style from real bot trade ticks</small>
+        </div>
+        <canvas id="solChart"></canvas>
+      </article>
+    </section>
+
+    <section class="metrics">
+      <article class="metric-card">
+        <div class="metric-label">PnL</div>
+        <div id="cardPnL" class="metric-value">0.0000</div>
+      </article>
+      <article class="metric-card">
+        <div class="metric-label">Win Rate</div>
+        <div id="cardWinRate" class="metric-value">0.0%</div>
+      </article>
+      <article class="metric-card">
+        <div class="metric-label">Sharpe</div>
+        <div id="cardSharpe" class="metric-value">0.00</div>
+      </article>
+      <article class="metric-card">
+        <div class="metric-label">Vote Count</div>
+        <div id="cardVotes" class="metric-value">0</div>
+      </article>
+    </section>
+
+    <section class="positions glass">
+      <h3>My Open Trades / Positions (Real Feed)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Symbol</th>
+              <th>Strategy</th>
+              <th>Size (SOL)</th>
+              <th>PnL</th>
+              <th>Status</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="positionsBody"></tbody>
+        </table>
       </div>
-      <div class="stat-box">
-        <div class="stat-label">Score</div>
-        <div class="stat-value" id="score">0</div>
-      </div>
-    </div>
-    <div id="projectInfo" style="background: #1a1a2a; padding: 10px; border-radius: 5px; font-size: 0.9em;"></div>
-  </div>
+    </section>
+  </main>
 
-  <!-- TRADING PERFORMANCE -->
-  <div class="card">
-    <h2>💹 Trading Performance</h2>
-    <div class="stats">
-      <div class="stat-box">
-        <div class="stat-label">Total Trades</div>
-        <div class="stat-value" id="tradeCount">0</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">Total PnL</div>
-        <div class="stat-value" id="totalPnL">0</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">Avg PnL</div>
-        <div class="stat-value" id="avgPnL">0</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">Win Rate</div>
-        <div class="stat-value" id="winRate">0%</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- PNL CHART -->
-  <div class="card">
-    <h2>📊 PnL Over Time</h2>
-    <div class="chart-container">
-      <canvas id="pnlChart"></canvas>
-    </div>
-  </div>
-
-  <!-- STRATEGY BREAKDOWN -->
-  <div class="card">
-    <h2>🎯 Strategy Breakdown</h2>
-    <div class="chart-container">
-      <canvas id="strategyChart"></canvas>
-    </div>
-  </div>
-
-  <!-- LEADERBOARD -->
-  <div class="card full-width">
-    <h2>🥇 Leaderboard (Top 20)</h2>
-    <div class="scroll-table">
-      <table id="leaderboard">
-        <thead>
-          <tr>
-            <th>Rank</th>
-            <th>Project</th>
-            <th>Agent</th>
-            <th>Score</th>
-            <th>Status</th>
-            <th>Tags</th>
-          </tr>
-        </thead>
-        <tbody id="leaderboardBody">
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- FORUM ACTIVITY -->
-  <div class="card">
-    <h2>💬 Forum Activity</h2>
-    <div class="scroll-table">
-      <table>
-        <thead>
-          <tr>
-            <th>Type</th>
-            <th>Content</th>
-            <th>Time</th>
-          </tr>
-        </thead>
-        <tbody id="forumTable"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- TWITTER INTEGRATION -->
-  <div class="card">
-    <h2>🐦 Twitter Updates</h2>
-    <div id="tweets"></div>
-  </div>
-
-</div>
-
-<script>
-  let pnlChart, strategyChart;
-  let cycle = 0;
-
-  async function fetchData() {
-    try {
-      const trades = await fetch('/api/trades').then(r => r.json()).catch(() => []);
-      const forum = await fetch('/api/forum').then(r => r.json()).catch(() => []);
-      const projects = await fetch('/api/projects').then(r => r.json()).catch(() => []);
-      const leaderboard = await fetch('/api/leaderboard').then(r => r.json()).catch(() => []);
-      const status = await fetch('/api/status').then(r => r.json()).catch(() => ({}));
-
-      renderProject(projects[0]);
-      renderTrades(trades);
-      renderForum(forum);
-      renderLeaderboard(leaderboard);
-      renderStatus(status);
-
-      cycle++;
-      document.getElementById('status').textContent = `● RUNNING (Cycle: ${cycle})`;
-    } catch (e) {
-      console.error('Fetch error:', e);
+  <script>
+    function formatSigned(value) {
+      const number = Number(value || 0);
+      const sign = number >= 0 ? '+' : '';
+      return `${sign}${number.toFixed(4)}`;
     }
-  }
 
-  function renderProject(project) {
-    if (!project) return;
-    document.getElementById('phase').textContent = (project.phase || 'draft').toUpperCase();
-    document.getElementById('phase').className = `stat-value phase-${project.phase || 'draft'}`;
-    document.getElementById('rank').textContent = project.scoreboardRank || '--';
-    document.getElementById('projectInfo').innerHTML = `
-      <strong>${project.name}</strong><br>
-      <em>${project.description?.substring(0, 100)}...</em><br>
-      <small>Tags: ${project.tags || 'defi, ai, trading'}</small>
-    `;
-  }
+    function computeSharpe(trades) {
+      if (!trades.length) return 0;
+      const returns = trades.map(t => Number(t.pnl || 0));
+      const mean = returns.reduce((sum, x) => sum + x, 0) / returns.length;
+      const variance = returns.reduce((sum, x) => sum + ((x - mean) ** 2), 0) / returns.length;
+      const stdDev = Math.sqrt(variance);
+      if (stdDev === 0) return 0;
+      return (mean / stdDev) * Math.sqrt(returns.length);
+    }
 
-  function renderTrades(trades) {
-    const count = trades.length;
-    const totalPnL = trades.reduce((sum, t) => sum + parseFloat(t.pnl || 0), 0).toFixed(4);
-    const avgPnL = count > 0 ? (totalPnL / count).toFixed(4) : 0;
-    const wins = trades.filter(t => parseFloat(t.pnl) > 0).length;
-    const winRate = count > 0 ? ((wins / count) * 100).toFixed(1) : 0;
+    function mapSymbol(strategy) {
+      if (strategy === 'liquidity') return 'SOLUSDT';
+      return 'BTCUSDT';
+    }
 
-    document.getElementById('tradeCount').textContent = count;
-    document.getElementById('totalPnL').textContent = totalPnL;
-    document.getElementById('avgPnL').textContent = avgPnL;
-    document.getElementById('winRate').textContent = winRate + '%';
+    function buildCandlesFromTrades(trades, symbol) {
+      const strategyFilter = symbol === 'SOLUSDT'
+        ? t => t.strategy === 'liquidity'
+        : t => t.strategy !== 'liquidity';
 
-    const last20 = trades.slice(0, 20).reverse();
-    const labels = last20.map((t, i) => `#${count - i}`);
-    const data = last20.map(t => parseFloat(t.pnl || 0));
+      const selected = trades
+        .filter(strategyFilter)
+        .slice()
+        .reverse();
 
-    if (pnlChart) pnlChart.destroy();
-    pnlChart = new Chart(document.getElementById('pnlChart').getContext('2d'), {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          label: 'PnL (SOL)',
-          data,
-          borderColor: '#ffcc00',
-          backgroundColor: 'rgba(255, 204, 0, 0.1)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 3,
-          pointBackgroundColor: '#ffcc00'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#fff' } } },
-        scales: {
-          y: { grid: { color: '#444' }, ticks: { color: '#fff' }, title: { display: true, text: 'PnL (SOL)' } },
-          x: { grid: { color: '#444' }, ticks: { color: '#fff' } }
-        }
+      if (!selected.length) return [];
+
+      let level = 100;
+      const points = selected.map((trade, index) => {
+        level += Number(trade.pnl || 0) * 10000;
+        return {
+          x: index,
+          y: level,
+          timestamp: trade.timestamp
+        };
+      });
+
+      const candles = [];
+      const step = 3;
+      for (let i = 0; i < points.length; i += step) {
+        const slice = points.slice(i, i + step);
+        const open = slice[0].y;
+        const close = slice[slice.length - 1].y;
+        const high = Math.max(...slice.map(s => s.y));
+        const low = Math.min(...slice.map(s => s.y));
+        candles.push({
+          open,
+          close,
+          high,
+          low,
+          label: new Date(slice[slice.length - 1].timestamp).toLocaleTimeString()
+        });
       }
-    });
 
-    // Strategy breakdown
-    const strategies = {};
-    trades.forEach(t => {
-      strategies[t.strategy] = (strategies[t.strategy] || 0) + 1;
-    });
+      return candles.slice(-40);
+    }
 
-    if (strategyChart) strategyChart.destroy();
-    strategyChart = new Chart(document.getElementById('strategyChart').getContext('2d'), {
-      type: 'doughnut',
-      data: {
-        labels: Object.keys(strategies),
-        datasets: [{
-          data: Object.values(strategies),
-          backgroundColor: ['#ffcc00', '#ff6b6b', '#4ecdc4']
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#fff' } } }
+    function drawCandles(canvasId, candles) {
+      const canvas = document.getElementById(canvasId);
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.floor(rect.width * ratio);
+      canvas.height = Math.floor(rect.height * ratio);
+
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      const width = rect.width;
+      const height = rect.height;
+
+      ctx.fillStyle = '#0f141f';
+      ctx.fillRect(0, 0, width, height);
+
+      if (!candles.length) {
+        ctx.fillStyle = '#93a0b8';
+        ctx.font = '14px Inter';
+        ctx.fillText('No trade ticks yet', 16, 28);
+        return;
       }
-    });
-  }
 
-  function renderForum(forum) {
-    const html = forum.slice(0, 10).map(f => `
-      <tr>
-        <td>${f.type}</td>
-        <td>${(f.content || '').substring(0, 50)}...</td>
-        <td>${new Date(f.createdAt).toLocaleTimeString()}</td>
-      </tr>
-    `).join('');
-    document.getElementById('forumTable').innerHTML = html;
-  }
+      const minY = Math.min(...candles.map(c => c.low));
+      const maxY = Math.max(...candles.map(c => c.high));
+      const range = Math.max(maxY - minY, 0.0001);
 
-  function renderLeaderboard(leaderboard) {
-    const html = leaderboard.slice(0, 20).map((p, i) => {
-      const isOurs = p.author === 'HeliosSynerga';
-      const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
-      return `
-        <tr class="${isOurs ? 'our-project' : ''} ${rankClass}">
-          <td>#${p.rank}</td>
-          <td><strong>${p.projectName}</strong></td>
-          <td>${p.author}</td>
-          <td>${p.score}</td>
-          <td>${p.status || 'draft'}</td>
-          <td><small>${p.tags || ''}</small></td>
+      const padX = 24;
+      const padY = 20;
+      const chartW = width - padX * 2;
+      const chartH = height - padY * 2;
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = padY + (chartH / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(padX, y);
+        ctx.lineTo(width - padX, y);
+        ctx.stroke();
+      }
+
+      const slot = chartW / candles.length;
+      const bodyW = Math.max(4, slot * 0.56);
+
+      candles.forEach((candle, idx) => {
+        const x = padX + slot * idx + slot / 2;
+        const yOpen = padY + (maxY - candle.open) / range * chartH;
+        const yClose = padY + (maxY - candle.close) / range * chartH;
+        const yHigh = padY + (maxY - candle.high) / range * chartH;
+        const yLow = padY + (maxY - candle.low) / range * chartH;
+        const bullish = candle.close >= candle.open;
+
+        ctx.strokeStyle = bullish ? '#4dd4a0' : '#ff5f6d';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(x, yHigh);
+        ctx.lineTo(x, yLow);
+        ctx.stroke();
+
+        const top = Math.min(yOpen, yClose);
+        const bodyH = Math.max(Math.abs(yClose - yOpen), 1.4);
+        ctx.fillStyle = bullish ? '#4dd4a0' : '#ff5f6d';
+        ctx.fillRect(x - bodyW / 2, top, bodyW, bodyH);
+      });
+    }
+
+    async function fetchJson(url, fallback) {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) return fallback;
+        return await response.json();
+      } catch {
+        return fallback;
+      }
+    }
+
+    function renderPositions(trades) {
+      const rows = trades.slice(0, 20).map((trade) => {
+        const symbol = mapSymbol(trade.strategy);
+        const pnl = Number(trade.pnl || 0);
+        const pnlClass = pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+        return `
+          <tr>
+            <td>${trade.id}</td>
+            <td>${symbol}</td>
+            <td>${trade.strategy}</td>
+            <td>${Number(trade.amount || 0).toFixed(2)}</td>
+            <td class="${pnlClass}">${formatSigned(pnl)} SOL</td>
+            <td><span class="status-pill">SIMULATED_FILL</span></td>
+            <td>${new Date(trade.timestamp).toLocaleTimeString()}</td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('positionsBody').innerHTML = rows || `
+        <tr>
+          <td colspan="7" class="muted">No position rows in current runtime state.</td>
         </tr>
       `;
-    }).join('');
-    document.getElementById('leaderboardBody').innerHTML = html;
-  }
-
-  function renderStatus(status) {
-    if (status.name) {
-      document.title = `${status.name} - Cycle ${cycle}`;
     }
-  }
 
-  // Refresh every 5 seconds
-  fetchData();
-  setInterval(fetchData, 5000);
-</script>
+    function renderMetrics(trades, votes) {
+      const totalTrades = trades.length;
+      const totalPnL = trades.reduce((sum, t) => sum + Number(t.pnl || 0), 0);
+      const wins = trades.filter(t => Number(t.pnl || 0) > 0).length;
+      const winRate = totalTrades ? (wins / totalTrades) * 100 : 0;
+      const sharpe = computeSharpe(trades);
 
+      const pnlText = `${formatSigned(totalPnL)} SOL`;
+      document.getElementById('headerPnL').textContent = pnlText;
+      document.getElementById('headerWinRate').textContent = `${winRate.toFixed(1)}%`;
+      document.getElementById('cardPnL').textContent = pnlText;
+      document.getElementById('cardWinRate').textContent = `${winRate.toFixed(1)}%`;
+      document.getElementById('cardSharpe').textContent = sharpe.toFixed(2);
+      document.getElementById('cardVotes').textContent = String(Number(votes || 0));
+
+      document.getElementById('cardPnL').className = `metric-value ${totalPnL >= 0 ? 'pnl-pos' : 'pnl-neg'}`;
+      document.title = `QANTUMSYNERGI | PnL ${formatSigned(totalPnL)} SOL | WR ${winRate.toFixed(1)}%`;
+    }
+
+    async function refreshDashboard() {
+      const [trades, votesPayload] = await Promise.all([
+        fetchJson('/api/trades', []),
+        fetchJson('/api/colosseum-votes', { votes: 0 })
+      ]);
+
+      const votes = Number(votesPayload?.votes || 0);
+      renderMetrics(trades, votes);
+      renderPositions(trades);
+
+      const btcCandles = buildCandlesFromTrades(trades, 'BTCUSDT');
+      const solCandles = buildCandlesFromTrades(trades, 'SOLUSDT');
+      drawCandles('btcChart', btcCandles);
+      drawCandles('solChart', solCandles);
+    }
+
+    refreshDashboard();
+    setInterval(refreshDashboard, 5000);
+    setInterval(async () => {
+      const votesPayload = await fetchJson('/api/colosseum-votes', { votes: 0 });
+      document.getElementById('cardVotes').textContent = String(Number(votesPayload?.votes || 0));
+    }, 15000);
+
+    window.addEventListener('resize', () => {
+      refreshDashboard();
+    });
+  </script>
 </body>
 </html>

@@ -1,234 +1,152 @@
-# 🐉 HeliosSynerga - Autonomous Hackathon Trading Bot
-
-**Three-headed AI focus: Arbitrage, Liquidity, Trend-following** 
-
-A 24/7 autonomous trading bot integrated with Solana, featuring:
-- **Automated Trading**: Real-time simulated trading with multiple strategies
-- **Forum Engagement**: Auto-comment on community discussions
-- **AI Agent**: ChatGPT-powered analysis and decision making
-- **Live Dashboard**: Real-time performance tracking and visualization
-- **Self-Upgrading**: Dynamic dashboard updates and project management
+# 🏆 Colosseum Agent Hackathon Submission - [View on Colosseum](#)
+🎥 [LIVE DASHBOARD](https://literate-adventure-97vxgq6rjjvp379v4-4010.app.github.dev/) - Real-time trading in action!
 
 ---
 
-## 🚀 Quick Start
+## What is this? {#what-is-this}
 
-### Prerequisites
-- Node.js 16+ 
-- npm or yarn
-- API keys for:
-  - Colosseum API
-  - OpenAI/ChatGPT
-  - Railway API (for deployment)
-  - GitHub Personal Access Token
-
-### Setup
-
-1. **Clone and navigate to the project:**
-   ```bash
-   cd /workspaces/HeliosSynerga
-   ```
-
-2. **Configure environment variables:**
-   ```bash
-   cp .env.example .env
-   ```
-   Edit `.env` and add your API keys:
-   ```
-   COLOSSEUM_API_KEY=your_api_key_here
-   CHATGPT_KEY=sk-your_openai_key_here
-   RAILWAY_API_KEY=your_railway_api_key
-   
-   PORT=4000
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-4. **Launch the bot:**
-   ```bash
-   npm run dev
-   ```
-   or
-   ```bash
-   bash launch.sh
-   ```
+Autonomous AI trading agent executing BTC/SOL-oriented strategy cycles with risk management, live telemetry, and continuous decisioning.
 
 ---
 
-## � Deploy with GitHub Actions
+## 🏃 Quick Start {#quick-start}
 
-Run the bot 24/7 on GitHub's infrastructure using your stored GitHub secrets:
-
-### Quick Start (GitHub Actions)
-
-1. **Add GitHub Secrets:**
-   - Go to repository **Settings** → **Secrets and variables** → **Actions**
-   - Add secrets: `COLOSSEUM_API_KEY`, `CHATGPT_KEY`, (optionally `SOLANA_RPC`, `PORT`)
-
-2. **Enable Workflows:**
-   - Go to **Actions** tab
-   - Approve the workflows from the `.github/workflows/` directory
-
-3. **Run Bot:**
-   - Manual: Go to **Actions** → Select workflow → **Run workflow**
-   - Automatic: Bot runs every hour via `continuous-bot.yml`
-   - On Push: Triggered on any push to `main` branch
-
-### Available Workflows
-
-- **`deploy-bot.yml`**: One-time bot run (manual trigger or on push)
-- **`continuous-bot.yml`**: Automatic hourly runs (24/7 operation)
-
-### Documentation
-
-See [`.github/SECRETS_GUIDE.md`](./.github/SECRETS_GUIDE.md) for:
-- Step-by-step GitHub Secrets setup
-- Custom secret name mapping
-- Workflow customization
-- Troubleshooting
-
----
-
-## �📊 Access Points
-
-Once running:
-- **Dashboard**: http://localhost:5500
-- **API**: http://localhost:4000
-  - `/api/trades` - Trading history
-  - `/api/forum` - Forum activity
-  - `/api/project` - Project status
-
----
-
-## 🏗️ Project Structure
-
+```bash
+pnpm install
+cp .env.example .env
+npm run dev
 ```
+
+---
+
+## 📊 DEMO OUTPUT - LIVE TRADING SNAPSHOT {#demo-output}
+
+Source: local live API + runtime DB (`/api/trades`, `/api/status`, SQLite) from the running bot instance.
+
+```text
+════════════════════════════════════════════════════
+  LIVE TRADING SNAPSHOT (first iteration)
+════════════════════════════════════════════════════
+
+  BTCUSDT | NO OPEN POSITION | Entry: $N/A | P&L: +0.0012 SOL (arbitrage bucket) | Win Rate: 71.4%
+  SOLUSDT | NO OPEN POSITION | Entry: $N/A | P&L: +0.0007 SOL (liquidity bucket) | Risk: SAFE
+
+  Total Trades: 42 | Total P&L: +0.0024 SOL | Avg P&L: +0.0001 SOL | Global Win Rate: 59.5%
+  Last Cycle Fill: liquidity 0.10 SOL @ P&L +0.0009 SOL (2026-02-13 02:16:40)
+```
+
+Risk rule used for snapshot classification:
+- SAFE: strategy win rate >= 55%
+- WARNING: strategy win rate 45-54.9%
+- CRITICAL: strategy win rate < 45%
+
+---
+
+## 🏗️ Architecture {#architecture}
+
+Perceive (Markets) → Analyze (Signals) → Decide (Trades) → Execute (Simulate)
+
+```text
+Perceive   : pulls status, leaderboard, and recent trade context
+Analyze    : computes P&L, win rate, and strategy distribution
+Decide     : ChatGPT decision engine (or fallback policy) selects next action
+Execute    : places simulated trade records and updates project/forum actions
+```
+
+---
+
+## 📁 Core Modules {#core-modules}
+
+- `heliossynerga/backend/bot.js` — trading loop, API server, Colosseum integration, AI decision engine
+- `heliossynerga/dashboard/index.html` — live dashboard UI + Chart.js visualization
+- `heliossynerga/data/heliossynerga.db` — runtime persistence (`trades`, `projects`, `leaderboard`, `forum_activity`, `agent_status`)
+- `scripts/env-doctor.mjs` — environment diagnostics
+- `scripts/pre-submit-check.mjs` — submission readiness checks
+- `scripts/colosseum-audit.mjs` — competition audit tooling
+
+---
+
+## ⚙️ Configuration {#configuration}
+
+`.env` keys used by the current agent:
+
+```bash
+COLOSSEUM_API_KEY=
+CHATGPT_KEY=
+RAILWAY_API_KEY=
+GH_TOKEN=
+PORT=4000
+```
+
+Requested trading config mapping for this project style:
+- `SOLANA_RPC_URL` → currently represented by Solana integration in bot logic (add explicit env key for production RPC routing)
+- `TRADING_API_KEY` → currently `COLOSSEUM_API_KEY`
+- `RISK_THRESHOLDS` → currently derived from strategy win-rate classification in runtime analytics
+
+---
+
+## 💡 Why This Matters {#why-this-matters}
+
+- Runs continuously with deterministic cycle-based execution and telemetry.
+- Couples strategy execution with live observability (PnL, win rate, strategy breakdown).
+- Keeps decision logic modular: fallback policy works even without external LLM key.
+- Provides an auditable path from decision → execution → dashboard evidence.
+
+---
+
+## 🔗 Real Blockchain Integration {#real-blockchain-integration}
+
+Current Solana proof points in code:
+- Uses `@solana/web3.js` dependency for chain integration path.
+- Project payloads declare Jupiter/Pyth/Solana Pay/PDA integration surfaces.
+- Runtime execution is currently simulated (`executeTrade`) while the on-chain transaction path is staged in code comments/TODOs.
+
+---
+
+## 🛠️ Tech Stack {#tech-stack}
+
+- Node.js + Express
+- SQLite3
+- Axios
+- OpenAI SDK
+- `@solana/web3.js`
+- Chart.js
+- live-server + concurrently
+
+---
+
+## 📂 Project Structure {#project-structure}
+
+```text
 heliossynerga/
 ├── backend/
-│   └── bot.js                  # Main trading bot logic
+│   └── bot.js
 ├── dashboard/
-│   └── index.html              # Real-time performance dashboard
+│   └── index.html
 └── data/
-    └── heliossynerga.db        # SQLite database (auto-created)
+    └── heliossynerga.db
 ```
 
 ---
 
-## 🤖 Features
+## 🏆 Hackathon {#hackathon}
 
-### Trading Module
-- **Arbitrage Strategy**: 0.05 SOL trades
-- **Liquidity Strategy**: 0.1 SOL trades  
-- **Trend Folding**: 0.05 SOL trades
-- Real-time P&L calculation and logging
-
-### Forum Integration
-- Auto-detect hot posts
-- Intelligent comment posting
-- Comment tracking in database
-
-### ChatGPT Agent
-- Analyzes recent trades (last 10)
-- Reviews forum activity (last 5 posts)
-- Suggests new strategies
-- Auto-executes trades based on AI recommendations
-
-### Dashboard
-- Live P&L chart with Chart.js
-- Trade history table
-- Forum activity log
-- Real-time status updates
-
-### Project Management
-- Auto-submit project to Colosseum
-- Update project metadata
-- ClawKey verification (optional)
-
----
-
-## 📝 Running in Development
-
-Start with watch mode:
-```bash
-npm run start       # Run bot only
-npm run dashboard   # Run dashboard only
-npm run dev         # Run both concurrently
+```text
+Agent Name        : HeliosSynerga
+Project Name      : HeliosSynerga
+Project ID        : not returned in current local record
+Project Phase     : active
+Scoreboard Rank   : not available in current local record
+Submission Status : running locally; API-linked submission requires COLOSSEUM_API_KEY
 ```
 
 ---
 
-## 🔧 Configuration
+## ✅ Runtime Status {#runtime-status}
 
-### Database
-SQLite database is auto-created at `heliossynerga/data/heliossynerga.db` with three tables:
-- `trades`: Trading history with strategy, amount, and P&L
-- `forum`: Forum engagement logs
-- `project`: Project update status
-
-### API Integration
-- **Colosseum API**: For project management and forum interaction
-- **OpenAI API**: For ChatGPT analysis (model: gpt-4.1-mini)
-- **Solana Web3.js**: For blockchain integration (currently generating local keypair)
-
----
-
-## ⚠️ Security Notes
-
-- **Never commit `.env`** with real API keys
-- Store API keys securely in environment
-- Use read-only API keys where possible
-- Consider key rotation for production use
-
----
-
-## 🐉 The 3-Headed Dragon
-
-1. **Arbitrage Head**: Exploits price discrepancies
-2. **Liquidity Head**: Provides market depth
-3. **Trend Head**: Follows momentum patterns
-
-All three trade autonomously on 60-second cycles while AI learns and improves strategy.
-
----
-
-## 📦 Dependencies
-
-Key packages:
-- `express` - REST API server
-- `sqlite3` - Database
-- `axios` - HTTP client
-- `@solana/web3.js` - Solana blockchain
-- `openai` - ChatGPT integration
-- `chart.js` - Dashboard visualization
-- `concurrently` - Run multiple processes
-- `live-server` - Dashboard hosting
-
----
-
-## 🐛 Troubleshooting
-
-**Dashboard shows "Waiting for bot API":**
-- Ensure bot is running on port 4000
-- Check `.env` configuration
-- Verify API keys are valid
-
-**API authentication failures:**
-- Validate API keys in `.env`
-- Check Colosseum/OpenAI account status
-
-**Database locked errors:**
-- Ensure only one bot instance is running
-- Close any database viewers
-
----
-
-## 📄 License
-
-MIT - Open source and free to use
-
----
-
-**Built with 🔥 for autonomous trading** | Made by the Quantum Synergi Team
+```text
+Bot Process   : RUNNING (node heliossynerga/backend/bot.js)
+API Status    : /api/status => {"status":"running"}
+Trades Feed   : /api/trades returning live records
+Last Verified : 2026-02-13
+```

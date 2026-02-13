@@ -622,6 +622,40 @@ app.get('/api/status', (req, res) =>
   )
 );
 
+app.get('/api/colosseum-votes', async (req, res) => {
+  try {
+    if (API_KEY) {
+      const statusRes = await colosseum.get('/agents/status');
+      const votes = Number(statusRes?.data?.votes?.count || 0);
+
+      db.run(
+        `INSERT INTO agent_status(agentId, name, status, engagementScore, projectsCount, votesCount, lastFetch)
+         VALUES(?, ?, ?, ?, ?, ?, datetime('now'))`,
+        [
+          statusRes?.data?.agent?.id,
+          statusRes?.data?.agent?.name,
+          statusRes?.data?.agent?.status,
+          statusRes?.data?.engagement?.score || 0,
+          statusRes?.data?.projects?.count || 0,
+          votes
+        ]
+      );
+
+      return res.json({ votes, source: 'colosseum' });
+    }
+
+    db.get(
+      "SELECT votesCount FROM agent_status ORDER BY lastFetch DESC LIMIT 1",
+      (_, row) => res.json({ votes: Number(row?.votesCount || 0), source: 'local-cache' })
+    );
+  } catch (e) {
+    db.get(
+      "SELECT votesCount FROM agent_status ORDER BY lastFetch DESC LIMIT 1",
+      (_, row) => res.json({ votes: Number(row?.votesCount || 0), source: 'local-cache', error: 'colosseum-unavailable' })
+    );
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Dashboard available at http://localhost:${PORT}`);
   console.log(`📊 API: http://localhost:${PORT}/api/trades`);
