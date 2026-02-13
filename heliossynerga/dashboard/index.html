@@ -516,6 +516,73 @@
 
   <script>
     let lastApiSync = null;
+    let resolvedApiBase = null;
+    let apiBaseResolutionPromise = null;
+
+    function inferForwardedOriginsFromHost(hostname) {
+      const match = hostname.match(/^(.*)-(\d+)\.app\.github\.dev$/);
+      if (!match) return [];
+      const prefix = match[1];
+      return [
+        `https://${prefix}-4000.app.github.dev`,
+        `https://${prefix}-4010.app.github.dev`,
+        `https://${prefix}-4020.app.github.dev`,
+        `https://${prefix}-4030.app.github.dev`,
+        `https://${prefix}-4040.app.github.dev`
+      ];
+    }
+
+    async function resolveApiBase() {
+      if (resolvedApiBase) return resolvedApiBase;
+      if (apiBaseResolutionPromise) return apiBaseResolutionPromise;
+
+      apiBaseResolutionPromise = (async () => {
+        const currentOrigin = window.location.origin;
+        const hostCandidates = inferForwardedOriginsFromHost(window.location.hostname);
+        const localCandidates = [
+          'http://localhost:4000',
+          'http://127.0.0.1:4000',
+          'http://localhost:4010',
+          'http://localhost:4020',
+          'http://localhost:4030',
+          'http://localhost:4040'
+        ];
+        const candidates = [currentOrigin, ...hostCandidates, ...localCandidates]
+          .filter((value, index, array) => value && array.indexOf(value) === index);
+
+        for (const origin of candidates) {
+          try {
+            const response = await fetch(`${origin}/api/health`, {
+              cache: 'no-store',
+              mode: 'cors'
+            });
+
+            if (!response.ok) {
+              continue;
+            }
+
+            const payload = await response.json().catch(() => null);
+            if (payload?.ok === true && payload?.service === 'heliossynerga-dashboard-api') {
+              resolvedApiBase = origin;
+              return origin;
+            }
+          } catch {
+            // continue
+          }
+        }
+
+        resolvedApiBase = currentOrigin;
+        return resolvedApiBase;
+      })();
+
+      return apiBaseResolutionPromise;
+    }
+
+    function buildApiUrl(path) {
+      const normalized = path.startsWith('/') ? path : `/${path}`;
+      const base = resolvedApiBase || window.location.origin;
+      return `${base}${normalized}`;
+    }
 
     function formatSigned(value) {
       const number = Number(value || 0);
@@ -824,10 +891,12 @@
       ctx.restore();
     }
 
-    async function fetchJson(url, fallback) {
+    async function fetchJson(path, fallback) {
+      await resolveApiBase();
       try {
-        const response = await fetch(url, {
+        const response = await fetch(buildApiUrl(path), {
           cache: 'no-store',
+          mode: 'cors',
           headers: {
             'Cache-Control': 'no-cache'
           }
@@ -956,10 +1025,10 @@
     }
 
     async function refreshDashboard() {
-      const [trades, votesPayload, forumActivity, heartbeatPayload, walletStatsPayload, pnlSeriesPayload, tradingSettingsPayload] = await Promise.all([
+      const [trades, votesPayload, activityPayload, heartbeatPayload, walletStatsPayload, pnlSeriesPayload, tradingSettingsPayload] = await Promise.all([
         fetchJson('/api/trades', []),
         fetchJson('/api/colosseum-votes', { votes: 0 }),
-        fetchJson('/api/forum', []),
+        fetchJson('/api/activity', { items: [] }),
         fetchJson('/api/heartbeat', { ok: false }),
         fetchJson('/api/wallet-stats', {
           virtualWallet: {
@@ -982,10 +1051,15 @@
       const votes = Number(votesPayload?.votes || 0);
       const apiSource = votesPayload?.source || 'unknown';
       const degraded = Boolean(votesPayload?.error);
+      const activityRows = Array.isArray(activityPayload)
+        ? activityPayload
+        : Array.isArray(activityPayload?.items)
+          ? activityPayload.items
+          : [];
 
       renderMetrics(trades, votes, walletStatsPayload);
       renderPositions(trades);
-      renderActivity(forumActivity);
+      renderActivity(activityRows);
 
       const btcCandles = buildCandlesFromTrades(trades, 'BTCUSDT');
       const solCandles = buildCandlesFromTrades(trades, 'SOLUSDT');
@@ -997,7 +1071,7 @@
       updateApiSyncStatus({
         ok: !degraded,
         source: apiSource,
-        note: `${degraded ? 'votes fallback active | ' : ''}${tradingSettingsPayload?.tradingMode || 'mode:unknown'} | wallet:${tradingSettingsPayload?.allowanceSource || 'unknown'}`
+        note: `${degraded ? 'votes fallback active | ' : ''}${tradingSettingsPayload?.tradingMode || 'mode:unknown'} | wallet:${tradingSettingsPayload?.allowanceSource || 'unknown'} | api:${resolvedApiBase || window.location.origin}`
       });
 
       updateHeartbeatStatus(heartbeatPayload);

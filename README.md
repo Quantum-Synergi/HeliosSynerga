@@ -1,5 +1,5 @@
 # 🏆 HeliosSynerga -> Colosseum Agent Hackathon Submission - [View on Colosseum](https://colosseum.com/agent-hackathon/projects/heliossynerga)
-🎥 [LIVE DASHBOARD](https://literate-adventure-97vxgq6rjjvp379v4-4000.app.github.dev/) - Real-time trading in action!
+🎥 Live monitoring links (Colosseum, GitHub Pages/Codespaces dashboard, Railway): see `MONITORING_LINKS.md`
 
 ---
 
@@ -68,6 +68,7 @@ Dashboard API surfaces:
 - `/api/wallet-stats` — virtual wallet allowance, live balance, ROI, trade stats
 - `/api/pnl-series` — cumulative profit-over-time points
 - `/api/trading-settings` — effective virtual wallet/trading mode config
+- `/api/activity` — unified live activity feed (trades + status + leaderboard + forum)
 
 ---
 

@@ -21,6 +21,30 @@ const client = axios.create({
   }
 });
 
+function stripTrailingSlash(value = '') {
+  return String(value || '').trim().replace(/\/+$/, '');
+}
+
+function resolveLiveAppLink() {
+  const explicit = stripTrailingSlash(
+    process.env.LIVE_APP_LINK || process.env.LIVE_DEMO_URL || process.env.RAILWAY_PUBLIC_URL || ''
+  );
+
+  if (explicit) {
+    return explicit;
+  }
+
+  const codespaceName = String(process.env.CODESPACE_NAME || '').trim();
+  const forwardingDomain = String(process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN || 'app.github.dev').trim();
+  const forwardedPort = Number(process.env.LIVE_APP_PORT || process.env.PORT || 4000);
+
+  if (codespaceName && forwardingDomain && Number.isFinite(forwardedPort) && forwardedPort > 0) {
+    return `https://${codespaceName}-${forwardedPort}.${forwardingDomain}`;
+  }
+
+  return `http://localhost:${Number.isFinite(forwardedPort) && forwardedPort > 0 ? forwardedPort : 4000}`;
+}
+
 const payload = {
   description:
     process.env.PROJECT_DESCRIPTION ||
@@ -47,7 +71,7 @@ const payload = {
   futureVision:
     process.env.FUTURE_VISION ||
     'Next milestones include stronger on-chain execution adapters, richer risk controls, and production hardening for long-running autonomous operations beyond hackathon scope.',
-  liveAppLink: process.env.LIVE_APP_LINK || 'https://heliossynerga-production.up.railway.app',
+  liveAppLink: resolveLiveAppLink(),
   presentationLink:
     process.env.PRESENTATION_LINK ||
     'https://github.com/Quantum-Synergi/HeliosSynerga/blob/main/README.md',

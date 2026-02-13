@@ -20,6 +20,9 @@ const VIRTUAL_WALLET_START_SOL = Number(
   1
 );
 const PORT = process.env.PORT || 4000;
+const EXPLICIT_LIVE_APP_LINK = String(
+  process.env.LIVE_APP_LINK || process.env.LIVE_DEMO_URL || process.env.RAILWAY_PUBLIC_URL || ''
+).trim();
 const SKILL_FILE_CANDIDATES = (
   process.env.COLOSSEUM_SKILL_FILE_PATHS
     ? process.env.COLOSSEUM_SKILL_FILE_PATHS.split(',').map((value) => value.trim()).filter(Boolean)
@@ -62,6 +65,29 @@ function toFiniteNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function stripTrailingSlash(value = '') {
+  return String(value || '').trim().replace(/\/+$/, '');
+}
+
+function resolveLiveAppLinkForPort(port) {
+  if (EXPLICIT_LIVE_APP_LINK) {
+    return stripTrailingSlash(EXPLICIT_LIVE_APP_LINK);
+  }
+
+  const codespaceName = String(process.env.CODESPACE_NAME || '').trim();
+  const forwardingDomain = String(process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN || 'app.github.dev').trim();
+  const numericPort = Number(port);
+
+  if (codespaceName && forwardingDomain && Number.isFinite(numericPort) && numericPort > 0) {
+    return `https://${codespaceName}-${numericPort}.${forwardingDomain}`;
+  }
+
+  const fallbackPort = Number.isFinite(numericPort) && numericPort > 0 ? numericPort : Number(PORT) || 4000;
+  return `http://localhost:${fallbackPort}`;
+}
+
+let runtimeLiveAppLink = resolveLiveAppLinkForPort(PORT);
+
 function pickWalletAllowanceFromStatus(statusPayload = {}) {
   const candidates = [
     statusPayload?.wallet?.allowedSol,
@@ -90,6 +116,7 @@ const initialSkillFileContext = getSkillFileContext();
 console.log(
   `🔐 Env check | COLOSSEUM_API_KEY/TRADING_API_KEY: ${API_KEY ? 'set' : 'missing'} | CHATGPT_KEY/OPENAI_API_KEY: ${CHATGPT_KEY ? 'set' : 'missing'} | RAILWAY_API_KEY: ${RAILWAY_API_KEY ? 'set' : 'missing'} | GH_TOKEN: ${GH_TOKEN ? 'set' : 'missing'}`
 );
+console.log(`🌐 Live app link resolved: ${runtimeLiveAppLink}`);
 
 if (initialSkillFileContext.path) {
   console.log(`🧭 Skill file loaded: ${initialSkillFileContext.path}`);
@@ -216,7 +243,7 @@ async function createProject() {
       businessModel: 'Freemium automation tooling: free base strategy templates, paid advanced strategy packs and execution analytics for power users.',
       competitiveLandscape: 'Existing bots often focus on single strategies or closed ecosystems. HeliosSynerga differentiates via multi-strategy orchestration, transparent activity logs, and rapid iteration in public during the hackathon.',
       futureVision: 'Post-hackathon roadmap adds robust on-chain execution adapters, richer risk controls, and production-grade deployment pipelines for continuous autonomous operation.',
-      liveAppLink: process.env.LIVE_APP_LINK || 'http://localhost:4000',
+      liveAppLink: runtimeLiveAppLink,
       presentationLink: 'https://github.com/Quantum-Synergi/HeliosSynerga/blob/main/README.md',
       tags: ['defi', 'ai', 'trading']
     };
@@ -251,7 +278,7 @@ async function updateProject() {
       businessModel: 'Freemium automation tooling: free base strategy templates, paid advanced strategy packs and execution analytics for power users.',
       competitiveLandscape: 'Existing bots often focus on single strategies or closed ecosystems. HeliosSynerga differentiates via multi-strategy orchestration, transparent activity logs, and rapid iteration in public during the hackathon.',
       futureVision: 'Post-hackathon roadmap adds robust on-chain execution adapters, richer risk controls, and production-grade deployment pipelines for continuous autonomous operation.',
-      liveAppLink: process.env.LIVE_APP_LINK || 'http://localhost:4000',
+      liveAppLink: runtimeLiveAppLink,
       presentationLink: 'https://github.com/Quantum-Synergi/HeliosSynerga/blob/main/README.md'
     };
 
@@ -675,6 +702,14 @@ app.use('/api', (req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
   next();
 });
 
@@ -820,6 +855,57 @@ app.get('/api/forum', (req, res) =>
   )
 );
 
+app.get('/api/activity', async (req, res) => {
+  const [trades, forumRows, statusRows, leaderboardRows] = await Promise.all([
+    dbAllAsync("SELECT id, strategy, amount, pnl, timestamp FROM trades ORDER BY timestamp DESC LIMIT 50"),
+    dbAllAsync("SELECT id, type, postId, commentId, content, createdAt FROM forum_activity ORDER BY createdAt DESC LIMIT 50"),
+    dbAllAsync("SELECT id, status, engagementScore, projectsCount, votesCount, lastFetch FROM agent_status ORDER BY lastFetch DESC LIMIT 20"),
+    dbAllAsync("SELECT rank, projectName, score, fetchedAt FROM leaderboard ORDER BY fetchedAt DESC LIMIT 20")
+  ]);
+
+  const tradeEvents = trades.map((trade) => {
+    const pnl = Number(trade.pnl || 0);
+    const signedPnl = `${pnl >= 0 ? '+' : ''}${pnl.toFixed(4)}`;
+    return {
+      type: 'trade',
+      reference: trade.id,
+      content: `${trade.strategy || 'unknown'} ${Number(trade.amount || 0).toFixed(2)} SOL | pnl ${signedPnl} SOL`,
+      createdAt: trade.timestamp
+    };
+  });
+
+  const forumEvents = forumRows.map((item) => ({
+    type: item.type || 'forum',
+    reference: item.postId || item.commentId || item.id,
+    content: String(item.content || ''),
+    createdAt: item.createdAt
+  }));
+
+  const statusEvents = statusRows.map((item) => ({
+    type: 'status',
+    reference: item.id,
+    content: `agent:${item.status || 'unknown'} | votes:${Number(item.votesCount || 0)} | engagement:${Number(item.engagementScore || 0).toFixed(2)}`,
+    createdAt: item.lastFetch
+  }));
+
+  const leaderboardEvents = leaderboardRows.map((item) => ({
+    type: 'leaderboard',
+    reference: item.rank,
+    content: `#${Number(item.rank || 0)} ${item.projectName || 'unknown'} | score:${Number(item.score || 0)}`,
+    createdAt: item.fetchedAt
+  }));
+
+  const allEvents = [...tradeEvents, ...forumEvents, ...statusEvents, ...leaderboardEvents]
+    .filter((item) => item.createdAt)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 100);
+
+  return res.json({
+    items: allEvents,
+    count: allEvents.length
+  });
+});
+
 app.get('/api/projects', (req, res) =>
   db.all("SELECT * FROM projects ORDER BY updatedAt DESC", (_, rows) => 
     res.json(rows || [])
@@ -927,10 +1013,45 @@ app.get('/api/colosseum-votes', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Dashboard available at http://localhost:${PORT}`);
-  console.log(`📊 API: http://localhost:${PORT}/api/trades`);
-  console.log(`📈 Leaderboard: http://localhost:${PORT}/api/leaderboard`);
-  mainLoop().catch(e => console.error('Fatal error:', e));
-});
+function startServerWithFallback(preferredPort) {
+  const candidatePorts = [
+    Number(preferredPort),
+    Number(process.env.FALLBACK_PORT || 4010),
+    Number(process.env.SECONDARY_FALLBACK_PORT || 4020),
+    Number(process.env.TERTIARY_FALLBACK_PORT || 4030),
+    Number(process.env.QUATERNARY_FALLBACK_PORT || 4040)
+  ].filter((value, index, array) => Number.isFinite(value) && array.indexOf(value) === index);
+
+  const tryPort = (portIndex) => {
+    const targetPort = candidatePorts[portIndex];
+
+    const server = app.listen(targetPort, () => {
+      runtimeLiveAppLink = resolveLiveAppLinkForPort(targetPort);
+      console.log(`🚀 Dashboard available at http://localhost:${targetPort}`);
+      console.log(`📊 API: http://localhost:${targetPort}/api/trades`);
+      console.log(`📈 Leaderboard: http://localhost:${targetPort}/api/leaderboard`);
+      console.log(`🌐 Runtime live app link: ${runtimeLiveAppLink}`);
+
+      if (Number(targetPort) !== Number(preferredPort)) {
+        console.warn(`⚠️ Preferred port ${preferredPort} unavailable, using fallback port ${targetPort}`);
+      }
+
+      mainLoop().catch((error) => console.error('Fatal error:', error));
+    });
+
+    server.on('error', (error) => {
+      if (error?.code === 'EADDRINUSE' && portIndex < candidatePorts.length - 1) {
+        console.warn(`⚠️ Port ${targetPort} in use, trying ${candidatePorts[portIndex + 1]}...`);
+        return tryPort(portIndex + 1);
+      }
+
+      console.error('❌ Failed to start API server:', error.message || error);
+      process.exit(1);
+    });
+  };
+
+  tryPort(0);
+}
+
+startServerWithFallback(PORT);
 

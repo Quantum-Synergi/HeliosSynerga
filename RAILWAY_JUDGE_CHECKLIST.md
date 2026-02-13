@@ -13,9 +13,13 @@
 - `RAILWAY_API_KEY`
 - `GH_TOKEN`
 - `PORT=4000`
-- `LIVE_APP_LINK=https://literate-adventure-97vxgq6rjjvp379v4-4000.app.github.dev/`
-- `LIVE_DEMO_URL=https://literate-adventure-97vxgq6rjjvp379v4-4000.app.github.dev/`
+- `LIVE_APP_LINK=<your-canonical-public-dashboard-url>`
+- `LIVE_DEMO_URL=<same-value-as-LIVE_APP_LINK>`
 - `RAILWAY_PUBLIC_URL=<your-railway-public-url>`
+
+Notes:
+- Keep `LIVE_APP_LINK`, `LIVE_DEMO_URL`, and GitHub Actions repository variables identical.
+- If running in Codespaces, the dashboard/API may bind to fallback ports (`4000`-`4040`); use the live URL printed at startup logs.
 
 ## 3) GitHub Actions Variables (Repository -> Settings -> Variables)
 - `LIVE_APP_LINK`
@@ -27,6 +31,7 @@
 - `/api/health` returns HTTP 200 and JSON `ok: true`
 - `/api/status` returns HTTP 200 and agent status payload
 - `/api/trades` returns HTTP 200 and JSON array payload
+- `/api/activity` returns HTTP 200 and JSON object with `items` array
 
 ## 5) One-Shot Validation
 Run the executable checker:

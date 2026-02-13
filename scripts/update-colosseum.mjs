@@ -4,7 +4,31 @@ import 'dotenv/config';
 const API_KEY = process.env.COLOSSEUM_API_KEY;
 const API_BASE = 'https://agents.colosseum.com/api';
 
-const LIVE_DEMO = process.env.LIVE_DEMO_URL || 'https://literate-adventure-97vxgq6rjjvp379v4-4000.app.github.dev/';
+function stripTrailingSlash(value = '') {
+  return String(value || '').trim().replace(/\/+$/, '');
+}
+
+function resolveLiveDemoUrl() {
+  const explicit = stripTrailingSlash(
+    process.env.LIVE_DEMO_URL || process.env.LIVE_APP_LINK || process.env.RAILWAY_PUBLIC_URL || ''
+  );
+
+  if (explicit) {
+    return explicit;
+  }
+
+  const codespaceName = String(process.env.CODESPACE_NAME || '').trim();
+  const forwardingDomain = String(process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN || 'app.github.dev').trim();
+  const forwardedPort = Number(process.env.LIVE_APP_PORT || process.env.PORT || 4000);
+
+  if (codespaceName && forwardingDomain && Number.isFinite(forwardedPort) && forwardedPort > 0) {
+    return `https://${codespaceName}-${forwardedPort}.${forwardingDomain}`;
+  }
+
+  return `http://localhost:${Number.isFinite(forwardedPort) && forwardedPort > 0 ? forwardedPort : 4000}`;
+}
+
+const LIVE_DEMO = resolveLiveDemoUrl();
 const GITHUB_URL = 'https://github.com/Quantum-Synergi/HeliosSynerga';
 const DESCRIPTION = 'Autonomous institutional trading agent executing BTC/SOL strategies with enterprise-grade analytics dashboard. Real-time P&L tracking, risk management, and transparent decision logging via Node.js + Solana web3.js. Production-ready architecture built 100% by AI.';
 const MINIMAL_SOLANA_TEXT = 'Integration details are intentionally minimal in this submission; implementation is documented in the public GitHub repository.';
