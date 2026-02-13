@@ -3,6 +3,7 @@ import fs from 'fs-extra';
 import express from 'express';
 import sqlite3 from 'sqlite3';
 import OpenAI from 'openai';
+import 'dotenv/config';
 
 const API_KEY = process.env.COLOSSEUM_API_KEY;
 const CHATGPT_KEY = process.env.CHATGPT_KEY;
@@ -13,6 +14,10 @@ const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
 const TWITTER_ACCESS_TOKEN = process.env.TWITTER_ACCESS_TOKEN;
 const TWITTER_ACCESS_TOKEN_SECRET = process.env.TWITTER_ACCESS_TOKEN_SECRET;
 const PORT = process.env.PORT || 4000;
+
+console.log(
+  `🔐 Env check | COLOSSEUM_API_KEY: ${API_KEY ? 'set' : 'missing'} | CHATGPT_KEY: ${CHATGPT_KEY ? 'set' : 'missing'} | RAILWAY_API_KEY: ${RAILWAY_API_KEY ? 'set' : 'missing'} | GH_TOKEN: ${GH_TOKEN ? 'set' : 'missing'}`
+);
 
 // ═══════════════════════════════════════════════════════════════
 // DATABASE SETUP
@@ -580,6 +585,12 @@ async function mainLoop() {
 // ═══════════════════════════════════════════════════════════════
 
 const app = express();
+
+app.use(express.static('./heliossynerga/dashboard'));
+
+app.get('/', (req, res) => {
+  res.sendFile('index.html', { root: './heliossynerga/dashboard' });
+});
 
 app.get('/api/trades', (req, res) =>
   db.all("SELECT * FROM trades ORDER BY timestamp DESC LIMIT 100", (_, rows) => 

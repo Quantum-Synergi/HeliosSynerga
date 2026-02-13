@@ -6,28 +6,37 @@
   "main": "heliossynerga/backend/bot.js",
   "scripts": {
     "start": "node heliossynerga/backend/bot.js",
+    "start:safe": "npm run doctor:env && npm run start",
     "dashboard": "live-server heliossynerga/dashboard --port 5500",
     "dev": "concurrently \"node heliossynerga/backend/bot.js\" \"live-server heliossynerga/dashboard --port 5500 --open\"",
     "install-deps": "npm install",
+    "doctor:env": "node scripts/env-doctor.mjs",
     "audit:colosseum": "node scripts/colosseum-audit.mjs",
     "precheck:submit": "node scripts/pre-submit-check.mjs",
     "hotfix:project-fields": "node scripts/project-fields-hotfix.mjs"
   },
-  "keywords": ["trading", "bot", "solana", "defi", "ai"],
+  "keywords": [
+    "trading",
+    "bot",
+    "solana",
+    "defi",
+    "ai"
+  ],
   "author": "HeliosSynerga",
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.6.0",
-    "express": "^4.18.0",
-    "sqlite3": "^5.1.0",
-    "@solana/web3.js": "^1.87.0",
     "@solana/spl-token": "^0.4.0",
+    "@solana/web3.js": "^1.87.0",
+    "axios": "^1.6.0",
     "chart.js": "^4.4.0",
-    "tailwindcss": "^3.3.0",
     "concurrently": "^8.2.0",
-    "nodemon": "^3.0.0",
+    "dotenv": "^17.3.1",
+    "express": "^4.18.0",
     "fs-extra": "^11.1.0",
+    "live-server": "^1.2.0",
+    "nodemon": "^3.0.0",
     "openai": "^4.32.0",
-    "live-server": "^1.2.0"
+    "sqlite3": "^5.1.0",
+    "tailwindcss": "^3.3.0"
   }
 }

@@ -1,6 +1,11 @@
 import axios from 'axios';
+import 'dotenv/config';
 
 const API_KEY = process.env.COLOSSEUM_API_KEY;
+
+console.log(
+  `🔐 Env check | COLOSSEUM_API_KEY: ${API_KEY ? 'set' : 'missing'}`
+);
 
 if (!API_KEY) {
   console.error('❌ Missing COLOSSEUM_API_KEY');

@@ -1,9 +1,14 @@
 import axios from 'axios';
+import 'dotenv/config';
 
 const API_BASE = 'https://agents.colosseum.com/api';
 const API_KEY = process.env.COLOSSEUM_API_KEY;
 const PROBE_FORUM = process.argv.includes('--probe-forum');
 const PROBE_PROJECT_VOTE = process.argv.includes('--probe-vote');
+
+console.log(
+  `🔐 Env check | COLOSSEUM_API_KEY: ${API_KEY ? 'set' : 'missing'}`
+);
 
 const client = axios.create({
   baseURL: API_BASE,
