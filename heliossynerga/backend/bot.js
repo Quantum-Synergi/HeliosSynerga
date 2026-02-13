@@ -691,7 +691,7 @@ async function mainLoop() {
       }
 
       // 6. Forum engagement
-      if (cycle % 3 === 0) {
+      if (cycle === 1 || cycle % 3 === 0) {
         await engageForum(cycle);
       }
 
@@ -783,6 +783,7 @@ const LIVE_SYMBOL_TOKEN_MAP = {
   SOLUSDT: 'So11111111111111111111111111111111111111112'
 };
 const USD_QUOTES = new Set(['USDC', 'USDT', 'USDS', 'USDH', 'USDC.E']);
+const BOT_AGENT_NAME = 'HeliosSynerga';
 let latestLivePriceSnapshot = null;
 let lastLivePriceLogAtMs = 0;
 
@@ -851,6 +852,48 @@ async function fetchSolanaPrices(symbols = ['BTCUSDT', 'SOLUSDT']) {
     source: 'dexscreener-solana',
     fetchedAt: new Date().toISOString()
   };
+}
+
+async function fetchPublicForumConversations(limit = 20) {
+  try {
+    const postsRes = await colosseum.get(`/forum/posts?limit=${Math.max(limit * 2, 40)}`).catch(() => ({ data: {} }));
+    const allPosts = Array.isArray(postsRes?.data?.posts) ? postsRes.data.posts : [];
+    const myPosts = allPosts.filter((post) => String(post?.agentName || '') === BOT_AGENT_NAME);
+
+    const postItems = myPosts.map((post) => ({
+      id: `post-${post.id}`,
+      type: 'post',
+      reference: post.id,
+      content: String(post.title || post.body || ''),
+      createdAt: post.createdAt,
+      source: 'colosseum-public'
+    }));
+
+    const commentCollections = await Promise.all(
+      myPosts.slice(0, 12).map(async (post) => {
+        const commentsRes = await colosseum.get(`/forum/posts/${post.id}/comments?limit=40`).catch(() => ({ data: {} }));
+        const comments = Array.isArray(commentsRes?.data?.comments) ? commentsRes.data.comments : [];
+        return comments
+          .filter((comment) => String(comment?.agentName || '') === BOT_AGENT_NAME)
+          .map((comment) => ({
+            id: `comment-${comment.id}`,
+            type: 'comment',
+            reference: comment.id,
+            content: String(comment.body || ''),
+            createdAt: comment.createdAt,
+            source: 'colosseum-public'
+          }));
+      })
+    );
+
+    const commentItems = commentCollections.flat();
+    return [...postItems, ...commentItems]
+      .filter((item) => item.createdAt)
+      .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+      .slice(0, limit);
+  } catch {
+    return [];
+  }
 }
 
 function generatePositionsFromLiveData(trades = [], liveSnapshot = null, previousSnapshot = null) {
@@ -1040,13 +1083,30 @@ app.get('/api/forum-conversations', async (req, res) => {
     "SELECT id, type, postId, commentId, content, createdAt FROM forum_activity ORDER BY createdAt DESC LIMIT 120"
   );
 
-  const items = rows.map((row) => ({
+  const localItems = rows.map((row) => ({
     id: row.id,
     type: row.type || 'comment',
     reference: row.commentId || row.postId || row.id,
     content: String(row.content || ''),
-    createdAt: row.createdAt
+    createdAt: row.createdAt,
+    source: 'local-runtime'
   }));
+
+  const publicItems = await fetchPublicForumConversations(60);
+  const merged = [...localItems, ...publicItems];
+  const seen = new Set();
+  const items = merged
+    .filter((item) => item.createdAt)
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .filter((item) => {
+      const key = `${item.type}|${item.reference}|${item.createdAt}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 120);
 
   const postCount = items.filter((item) => item.type === 'post').length;
   const commentCount = items.filter((item) => item.type === 'comment').length;
