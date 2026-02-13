@@ -968,25 +968,13 @@ async function refreshVoteSnapshot({ force = false } = {}) {
     const engagementScore = 0;
     const projectsCount = 1;
 
-    if (API_KEY) {
-      const myProjectRes = await colosseum.get('/my-project').catch(() => ({ data: {} }));
-      const myProject = myProjectRes?.data?.project || null;
-      if (myProject && isHeliosProject(myProject)) {
-        breakdown = projectVotesBreakdown(myProject);
-        votes = breakdown.totalVotes;
-        source = 'colosseum-my-project';
-        agentId = Number(myProject?.agentId || Number.NaN);
-        statusLabel = String(myProject?.status || statusLabel);
-      }
-    }
-
-    if (votes === null) {
-      const publicProject = await fetchPublicProjectSnapshot();
-      if (publicProject) {
-        breakdown = projectVotesBreakdown(publicProject);
-        votes = breakdown.totalVotes;
-        source = 'colosseum-public-projects';
-      }
+    const publicProject = await fetchPublicProjectSnapshot();
+    if (publicProject) {
+      breakdown = projectVotesBreakdown(publicProject);
+      votes = breakdown.totalVotes;
+      source = 'colosseum-public-projects-live';
+      agentId = Number(publicProject?.agentId || Number.NaN);
+      statusLabel = String(publicProject?.status || statusLabel);
     }
 
     if (votes === null) {
@@ -1508,7 +1496,7 @@ app.get('/api/heartbeat', async (req, res) => {
 
 app.get('/api/colosseum-votes', async (req, res) => {
   try {
-    const snapshot = await refreshVoteSnapshot();
+    const snapshot = await refreshVoteSnapshot({ force: true });
     return res.json(snapshot);
   } catch (e) {
     const cached = await readCachedVotesSnapshot();
