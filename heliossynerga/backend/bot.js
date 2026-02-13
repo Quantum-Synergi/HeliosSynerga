@@ -858,9 +858,16 @@ async function fetchPublicForumConversations(limit = 20) {
   try {
     const postsRes = await colosseum.get(`/forum/posts?limit=${Math.max(limit * 2, 40)}`).catch(() => ({ data: {} }));
     const allPosts = Array.isArray(postsRes?.data?.posts) ? postsRes.data.posts : [];
-    const myPosts = allPosts.filter((post) => String(post?.agentName || '') === BOT_AGENT_NAME);
+    const botNameLower = BOT_AGENT_NAME.toLowerCase();
+    const relatedPosts = allPosts.filter((post) => {
+      const agentName = String(post?.agentName || '').toLowerCase();
+      const title = String(post?.title || '').toLowerCase();
+      const body = String(post?.body || '').toLowerCase();
+      return agentName === botNameLower || title.includes(botNameLower) || body.includes(botNameLower);
+    });
+    const selectedPosts = (relatedPosts.length > 0 ? relatedPosts : allPosts).slice(0, Math.max(limit, 20));
 
-    const postItems = myPosts.map((post) => ({
+    const postItems = selectedPosts.map((post) => ({
       id: `post-${post.id}`,
       type: 'post',
       reference: post.id,
@@ -870,12 +877,17 @@ async function fetchPublicForumConversations(limit = 20) {
     }));
 
     const commentCollections = await Promise.all(
-      myPosts.slice(0, 12).map(async (post) => {
+      selectedPosts.slice(0, 12).map(async (post) => {
         const commentsRes = await colosseum.get(`/forum/posts/${post.id}/comments?limit=40`).catch(() => ({ data: {} }));
         const comments = Array.isArray(commentsRes?.data?.comments) ? commentsRes.data.comments : [];
-        return comments
-          .filter((comment) => String(comment?.agentName || '') === BOT_AGENT_NAME)
-          .map((comment) => ({
+        const selectedComments = relatedPosts.length > 0
+          ? comments.filter((comment) => {
+            const agentName = String(comment?.agentName || '').toLowerCase();
+            const body = String(comment?.body || '').toLowerCase();
+            return agentName === botNameLower || body.includes(botNameLower);
+          })
+          : comments;
+        return selectedComments.map((comment) => ({
             id: `comment-${comment.id}`,
             type: 'comment',
             reference: comment.id,
