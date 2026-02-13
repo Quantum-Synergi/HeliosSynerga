@@ -6,6 +6,10 @@ on:
     branches: [ main ]
     paths:
       - 'scripts/project-fields-hotfix.mjs'
+      - 'heliossynerga/backend/bot.js'
+      - 'heliossynerga/dashboard/index.html'
+      - 'README.md'
+      - 'MONITORING_LINKS.md'
       - '.github/workflows/project-fields-hotfix.yml'
       - 'package.json'
       - 'package-lock.json'
