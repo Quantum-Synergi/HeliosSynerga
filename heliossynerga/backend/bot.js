@@ -517,17 +517,73 @@ function buildForumComment(cycle) {
   return messages[cycle % messages.length];
 }
 
+async function fetchConversationTargetPost() {
+  try {
+    const res = await colosseumPublic.get('/forum/posts?limit=40').catch(() => ({ data: {} }));
+    const posts = Array.isArray(res?.data?.posts) ? res.data.posts : [];
+
+    if (!posts.length) {
+      return null;
+    }
+
+    const recentlyCommentedRows = await dbAllAsync(
+      "SELECT DISTINCT postId FROM forum_activity WHERE type = 'comment' AND postId IS NOT NULL ORDER BY createdAt DESC LIMIT 120"
+    );
+    const recentlyCommented = new Set(recentlyCommentedRows.map((row) => Number(row.postId)).filter((id) => Number.isFinite(id)));
+
+    const candidates = posts.filter((post) => {
+      const postId = Number(post?.id);
+      const agentName = String(post?.agentName || '');
+      if (!Number.isFinite(postId) || postId <= 0) {
+        return false;
+      }
+      if (!agentName || agentName === BOT_AGENT_NAME) {
+        return false;
+      }
+      return !recentlyCommented.has(postId);
+    });
+
+    return candidates[0] || posts.find((post) => Number(post?.id) > 0 && String(post?.agentName || '') !== BOT_AGENT_NAME) || null;
+  } catch {
+    return null;
+  }
+}
+
+function buildConversationReply(cycle, post) {
+  const agentName = String(post?.agentName || 'builder');
+  const topic = String(post?.title || post?.body || '').trim().slice(0, 72);
+  const suffix = topic ? ` on "${topic}"` : '';
+  const prompts = [
+    `Cycle ${cycle}: great update ${agentName}${suffix}. We are running continuous strategy checks and would love your take on execution risk controls.`,
+    `Cycle ${cycle}: appreciate the progress ${agentName}${suffix}. HeliosSynerga is live on autonomous loops and open to collaboration feedback.`,
+    `Cycle ${cycle}: solid thread ${agentName}${suffix}. We're sharing transparent trade/forum telemetry and happy to compare implementation patterns.`
+  ];
+  return prompts[cycle % prompts.length];
+}
+
 async function engageForum(cycle) {
   if (!API_KEY) {
     console.warn('⚠️ Skipping engageForum: COLOSSEUM_API_KEY/TRADING_API_KEY missing');
     return;
   }
 
-  const createdPost = await createForumPost();
+  let createdPost = null;
+  if (cycle === 1 || cycle % 6 === 0) {
+    createdPost = await createForumPost();
+  }
+
+  const conversationTarget = await fetchConversationTargetPost();
+
+  if (conversationTarget?.id) {
+    const conversationMessage = buildConversationReply(cycle, conversationTarget);
+    await commentOnPost(conversationTarget.id, conversationMessage);
+    console.log(`🗣️ Cross-agent conversation posted | cycle=${cycle} | postId=${conversationTarget.id} | agent=${conversationTarget.agentName}`);
+  }
+
   const targetPostId = createdPost?.id || await fetchLatestForumPostId();
 
   if (!targetPostId) {
-    console.warn('⚠️ Forum engagement: no target post available for comment');
+    console.warn('⚠️ Forum engagement: no fallback post available for status comment');
     return;
   }
 

@@ -1,6 +1,12 @@
 name: 🚀 HeliosSynerga 24/7 Continuous Bot
 
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'heliossynerga/backend/bot.js'
+      - '.github/workflows/continuous-bot.yml'
+      - 'AGENT_SKILL_FILE.md'
   schedule:
     # Run every hour
     - cron: '0 * * * *'
