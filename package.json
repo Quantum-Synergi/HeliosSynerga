@@ -15,7 +15,8 @@
     "precheck:submit": "node scripts/pre-submit-check.mjs",
     "hotfix:project-fields": "node scripts/project-fields-hotfix.mjs",
     "update-colosseum": "node scripts/update-colosseum.mjs",
-    "refetch:skills-heartbeat": "node scripts/refetch-skills-heartbeat.mjs"
+    "refetch:skills-heartbeat": "node scripts/refetch-skills-heartbeat.mjs",
+    "verify:public-links": "node scripts/verify-public-links.mjs"
   },
   "keywords": [
     "trading",

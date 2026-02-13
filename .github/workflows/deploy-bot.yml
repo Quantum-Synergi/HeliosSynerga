@@ -29,6 +29,9 @@ jobs:
           RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           PORT: ${{ secrets.PORT || '4000' }}
+          LIVE_APP_LINK: ${{ vars.LIVE_APP_LINK }}
+          LIVE_DEMO_URL: ${{ vars.LIVE_DEMO_URL }}
+          RAILWAY_PUBLIC_URL: ${{ vars.RAILWAY_PUBLIC_URL }}
         run: |
           cat > .env << EOF
           COLOSSEUM_API_KEY=$COLOSSEUM_API_KEY
@@ -36,6 +39,9 @@ jobs:
           RAILWAY_API_KEY=$RAILWAY_API_KEY
           GH_TOKEN=$GH_TOKEN
           PORT=$PORT
+          LIVE_APP_LINK=$LIVE_APP_LINK
+          LIVE_DEMO_URL=$LIVE_DEMO_URL
+          RAILWAY_PUBLIC_URL=$RAILWAY_PUBLIC_URL
           EOF
           echo "✅ .env file created from GitHub secrets"
       
@@ -46,5 +52,8 @@ jobs:
           RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           PORT: ${{ secrets.PORT || '4000' }}
+          LIVE_APP_LINK: ${{ vars.LIVE_APP_LINK }}
+          LIVE_DEMO_URL: ${{ vars.LIVE_DEMO_URL }}
+          RAILWAY_PUBLIC_URL: ${{ vars.RAILWAY_PUBLIC_URL }}
         run: |
           timeout 3600 node heliossynerga/backend/bot.js || true

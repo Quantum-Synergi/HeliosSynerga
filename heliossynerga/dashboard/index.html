@@ -297,6 +297,12 @@
       color: #90a0bc;
     }
 
+    .heartbeat-line {
+      margin-top: 0.25rem;
+      font-size: 0.72rem;
+      color: #97a8c8;
+    }
+
     .footer a {
       color: #b8c3dc;
       text-decoration: none;
@@ -471,6 +477,7 @@
       Technical details:
       <a href="https://github.com/Quantum-Synergi/HeliosSynerga" target="_blank" rel="noopener noreferrer">https://github.com/Quantum-Synergi/HeliosSynerga</a>
       <div id="apiSyncStatus" class="sync-line">API sync: connecting...</div>
+      <div id="heartbeatStatus" class="heartbeat-line">Heartbeat: connecting...</div>
     </footer>
   </main>
 
@@ -633,6 +640,25 @@
       target.textContent = `API sync: ${state} | source: ${source} | last update: ${syncTime}${suffix}`;
     }
 
+    function updateHeartbeatStatus(payload) {
+      const target = document.getElementById('heartbeatStatus');
+      if (!target) return;
+
+      if (!payload?.ok || !payload?.heartbeat) {
+        target.textContent = 'Heartbeat: unavailable';
+        return;
+      }
+
+      const heartbeat = payload.heartbeat;
+      const heartbeatTime = heartbeat?.fetchedAt
+        ? new Date(heartbeat.fetchedAt).toLocaleTimeString()
+        : 'unknown';
+      const agentStatus = heartbeat?.agent?.status || 'unknown';
+      const projectStatus = heartbeat?.project?.status || 'unknown';
+
+      target.textContent = `Heartbeat: ${agentStatus} | project: ${projectStatus} | synced: ${heartbeatTime}`;
+    }
+
     function renderPositions(trades) {
       const rows = trades.slice(0, 20).map((trade) => {
         const symbol = mapSymbol(trade.strategy);
@@ -703,10 +729,11 @@
     }
 
     async function refreshDashboard() {
-      const [trades, votesPayload, forumActivity] = await Promise.all([
+      const [trades, votesPayload, forumActivity, heartbeatPayload] = await Promise.all([
         fetchJson('/api/trades', []),
         fetchJson('/api/colosseum-votes', { votes: 0 }),
-        fetchJson('/api/forum', [])
+        fetchJson('/api/forum', []),
+        fetchJson('/api/heartbeat', { ok: false })
       ]);
 
       const votes = Number(votesPayload?.votes || 0);
@@ -727,6 +754,8 @@
         source: apiSource,
         note: degraded ? 'votes fallback active' : ''
       });
+
+      updateHeartbeatStatus(heartbeatPayload);
     }
 
     refreshDashboard();

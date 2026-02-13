@@ -686,6 +686,29 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+app.get('/api/heartbeat', async (req, res) => {
+  try {
+    const heartbeatPath = './.colosseum/heartbeat.json';
+    if (!fs.pathExistsSync(heartbeatPath)) {
+      return res.json({
+        ok: false,
+        message: 'heartbeat-not-found'
+      });
+    }
+
+    const heartbeat = await fs.readJson(heartbeatPath);
+    return res.json({
+      ok: true,
+      heartbeat
+    });
+  } catch (error) {
+    return res.json({
+      ok: false,
+      message: 'heartbeat-read-failed'
+    });
+  }
+});
+
 app.get('/api/colosseum-votes', async (req, res) => {
   const readCachedVotes = (extra = {}) => {
     db.get(
