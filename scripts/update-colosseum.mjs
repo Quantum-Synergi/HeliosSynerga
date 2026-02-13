@@ -4,7 +4,7 @@ import 'dotenv/config';
 const API_KEY = process.env.COLOSSEUM_API_KEY;
 const API_BASE = 'https://agents.colosseum.com/api';
 
-const LIVE_DEMO = 'https://literate-adventure-97vxgq6rjjvp379v4-4000.app.github.dev/';
+const LIVE_DEMO = process.env.LIVE_DEMO_URL || 'https://literate-adventure-97vxgq6rjjvp379v4-4000.app.github.dev/';
 const GITHUB_URL = 'https://github.com/Quantum-Synergi/HeliosSynerga';
 const DESCRIPTION = 'Autonomous institutional trading agent executing BTC/SOL strategies with enterprise-grade analytics dashboard. Real-time P&L tracking, risk management, and transparent decision logging via Node.js + Solana web3.js. Production-ready architecture built 100% by AI.';
 const MINIMAL_SOLANA_TEXT = 'Integration details are intentionally minimal in this submission; implementation is documented in the public GitHub repository.';

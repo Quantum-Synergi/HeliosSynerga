@@ -31,4 +31,5 @@ jobs:
       - name: 🎯 Update /my-project Metadata
         env:
           COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+          LIVE_DEMO_URL: ${{ vars.LIVE_DEMO_URL }}
         run: npm run update-colosseum
