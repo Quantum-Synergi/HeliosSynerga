@@ -76,7 +76,15 @@ CHATGPT_KEY=
 RAILWAY_API_KEY=
 GH_TOKEN=
 PORT=4000
+LIVE_APP_LINK=https://your-live-demo-url
+LIVE_DEMO_URL=https://your-live-demo-url
+RAILWAY_PUBLIC_URL=https://your-railway-service.up.railway.app
 ```
+
+GitHub Actions repository variables (recommended for judge verification):
+- `LIVE_APP_LINK`
+- `LIVE_DEMO_URL`
+- `RAILWAY_PUBLIC_URL`
 
 Requested trading config mapping for this project style:
 - `SOLANA_RPC_URL` → currently represented by Solana integration in bot logic (add explicit env key for production RPC routing)

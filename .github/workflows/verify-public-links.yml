@@ -32,7 +32,7 @@ jobs:
 
       - name: ✅ Verify Demo + Railway Public Links
         env:
-          LIVE_DEMO_URL: ${{ vars.LIVE_DEMO_URL }}
-          LIVE_APP_LINK: ${{ vars.LIVE_APP_LINK }}
-          RAILWAY_PUBLIC_URL: ${{ vars.RAILWAY_PUBLIC_URL }}
+          LIVE_DEMO_URL: ${{ vars.LIVE_DEMO_URL || 'https://literate-adventure-97vxgq6rjjvp379v4-4000.app.github.dev/' }}
+          LIVE_APP_LINK: ${{ vars.LIVE_APP_LINK || 'https://literate-adventure-97vxgq6rjjvp379v4-4000.app.github.dev/' }}
+          RAILWAY_PUBLIC_URL: ${{ vars.RAILWAY_PUBLIC_URL || 'https://heliossynerga-production.up.railway.app' }}
         run: npm run verify:public-links
