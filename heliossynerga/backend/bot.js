@@ -96,6 +96,15 @@ function resolveLiveAppLinkForPort(port) {
 
 let runtimeLiveAppLink = resolveLiveAppLinkForPort(PORT);
 
+const LOCAL_DATA_DIR = './heliossynerga/data';
+const PERSISTENT_DATA_DIR_CANDIDATE = stripTrailingSlash(
+  process.env.HELIOS_DATA_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH || '/data'
+);
+const ACTIVE_DATA_DIR = PERSISTENT_DATA_DIR_CANDIDATE && fs.pathExistsSync(PERSISTENT_DATA_DIR_CANDIDATE)
+  ? PERSISTENT_DATA_DIR_CANDIDATE
+  : LOCAL_DATA_DIR;
+const DB_PATH = `${ACTIVE_DATA_DIR}/heliossynerga.db`;
+
 function resolveColosseumLiveDemoUrl() {
   return HELIOS_STABLE_DEMO_URL;
 }
@@ -140,8 +149,10 @@ if (initialSkillFileContext.path) {
 // DATABASE SETUP
 // ═══════════════════════════════════════════════════════════════
 
-fs.ensureDirSync('./heliossynerga/data');
-const db = new sqlite3.Database('./heliossynerga/data/heliossynerga.db');
+fs.ensureDirSync(ACTIVE_DATA_DIR);
+console.log(`💾 Active data directory: ${ACTIVE_DATA_DIR}`);
+console.log(`🗃️ SQLite path: ${DB_PATH}`);
+const db = new sqlite3.Database(DB_PATH);
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS trades(
     id INTEGER PRIMARY KEY, 
