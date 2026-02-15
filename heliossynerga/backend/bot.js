@@ -97,13 +97,27 @@ function resolveLiveAppLinkForPort(port) {
 let runtimeLiveAppLink = resolveLiveAppLinkForPort(PORT);
 
 const LOCAL_DATA_DIR = './heliossynerga/data';
-const PERSISTENT_DATA_DIR_CANDIDATE = stripTrailingSlash(
-  process.env.HELIOS_DATA_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH || '/data'
-);
-const ACTIVE_DATA_DIR = PERSISTENT_DATA_DIR_CANDIDATE && fs.pathExistsSync(PERSISTENT_DATA_DIR_CANDIDATE)
-  ? PERSISTENT_DATA_DIR_CANDIDATE
-  : LOCAL_DATA_DIR;
+const EXPLICIT_DATA_DIR = stripTrailingSlash(process.env.HELIOS_DATA_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH || '');
+const DEFAULT_PERSISTENT_DATA_DIR = '/data';
+const PERSISTENT_DATA_DIR_CANDIDATE = EXPLICIT_DATA_DIR || DEFAULT_PERSISTENT_DATA_DIR;
+const ACTIVE_DATA_DIR = EXPLICIT_DATA_DIR
+  ? EXPLICIT_DATA_DIR
+  : (fs.pathExistsSync(DEFAULT_PERSISTENT_DATA_DIR) ? DEFAULT_PERSISTENT_DATA_DIR : LOCAL_DATA_DIR);
+const DATA_STORAGE_MODE = ACTIVE_DATA_DIR === LOCAL_DATA_DIR ? 'local-ephemeral' : 'persistent';
 const DB_PATH = `${ACTIVE_DATA_DIR}/heliossynerga.db`;
+
+function getLoopConfig() {
+  const configuredMaxCycles = Number.parseInt(String(process.env.MAX_CYCLES || ''), 10);
+  const maxCycles = Number.isFinite(configuredMaxCycles) && configuredMaxCycles > 0
+    ? configuredMaxCycles
+    : Number.POSITIVE_INFINITY;
+
+  return {
+    maxCycles,
+    configuredMaxCycles,
+    mode: Number.isFinite(maxCycles) ? 'bounded' : 'continuous'
+  };
+}
 
 function resolveColosseumLiveDemoUrl() {
   return HELIOS_STABLE_DEMO_URL;
@@ -152,6 +166,9 @@ if (initialSkillFileContext.path) {
 fs.ensureDirSync(ACTIVE_DATA_DIR);
 console.log(`💾 Active data directory: ${ACTIVE_DATA_DIR}`);
 console.log(`🗃️ SQLite path: ${DB_PATH}`);
+if (DATA_STORAGE_MODE === 'local-ephemeral') {
+  console.warn('⚠️ Data persistence mode is local-ephemeral. Set HELIOS_DATA_DIR or mount /data for persistent trade history across restarts.');
+}
 const db = new sqlite3.Database(DB_PATH);
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS trades(
@@ -744,10 +761,8 @@ async function mainLoop() {
   await new Promise(r => setTimeout(r, 2000));
 
   let cycle = 0;
-  const configuredMaxCycles = Number.parseInt(String(process.env.MAX_CYCLES || ''), 10);
-  const maxCycles = Number.isFinite(configuredMaxCycles) && configuredMaxCycles > 0
-    ? configuredMaxCycles
-    : Number.POSITIVE_INFINITY;
+  const loopConfig = getLoopConfig();
+  const maxCycles = loopConfig.maxCycles;
 
   if (Number.isFinite(maxCycles)) {
     console.log(`⏱️ Loop mode: bounded (${maxCycles} cycles)`);
@@ -1502,6 +1517,29 @@ app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
     service: 'heliossynerga-dashboard-api',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/runtime-status', (req, res) => {
+  const loopConfig = getLoopConfig();
+  return res.json({
+    ok: true,
+    autonomous: {
+      loopMode: loopConfig.mode,
+      maxCycles: Number.isFinite(loopConfig.maxCycles) ? loopConfig.maxCycles : null,
+      continuous: loopConfig.mode === 'continuous'
+    },
+    storage: {
+      mode: DATA_STORAGE_MODE,
+      dataDir: ACTIVE_DATA_DIR,
+      dbPath: DB_PATH,
+      persistent: DATA_STORAGE_MODE === 'persistent'
+    },
+    runtime: {
+      liveAppLink: runtimeLiveAppLink,
+      stableDemoUrl: HELIOS_STABLE_DEMO_URL
+    },
     timestamp: new Date().toISOString()
   });
 });
