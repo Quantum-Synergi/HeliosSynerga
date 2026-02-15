@@ -1486,13 +1486,46 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+async function buildRuntimeHeartbeatSnapshot() {
+  const [agentRow, projectRow] = await Promise.all([
+    dbGetAsync('SELECT name, status, lastFetch FROM agent_status ORDER BY lastFetch DESC LIMIT 1'),
+    dbGetAsync('SELECT name, phase, updatedAt, submittedAt, projectId FROM projects ORDER BY updatedAt DESC LIMIT 1')
+  ]);
+
+  return {
+    fetchedAt: new Date().toISOString(),
+    source: 'runtime-db-fallback',
+    note: 'Heartbeat file missing; generated from runtime database snapshot.',
+    agent: {
+      id: null,
+      name: agentRow?.name || HELIOS_PROJECT_NAME,
+      status: agentRow?.status || 'running'
+    },
+    hackathon: null,
+    engagement: null,
+    projects: null,
+    votes: null,
+    hasActivePoll: false,
+    claimUrl: null,
+    project: {
+      id: Number(projectRow?.projectId || HELIOS_PROJECT_ID),
+      name: projectRow?.name || HELIOS_PROJECT_NAME,
+      status: projectRow?.phase || 'submitted',
+      updatedAt: projectRow?.updatedAt || null,
+      submittedAt: projectRow?.submittedAt || null,
+      liveAppLink: HELIOS_STABLE_DEMO_URL
+    }
+  };
+}
+
 app.get('/api/heartbeat', async (req, res) => {
   try {
     const heartbeatPath = './.colosseum/heartbeat.json';
     if (!fs.pathExistsSync(heartbeatPath)) {
       return res.json({
-        ok: false,
-        message: 'heartbeat-not-found'
+        ok: true,
+        message: 'heartbeat-not-found-fallback',
+        heartbeat: await buildRuntimeHeartbeatSnapshot()
       });
     }
 
@@ -1503,8 +1536,9 @@ app.get('/api/heartbeat', async (req, res) => {
     });
   } catch (error) {
     return res.json({
-      ok: false,
-      message: 'heartbeat-read-failed'
+      ok: true,
+      message: 'heartbeat-read-failed-fallback',
+      heartbeat: await buildRuntimeHeartbeatSnapshot()
     });
   }
 });
