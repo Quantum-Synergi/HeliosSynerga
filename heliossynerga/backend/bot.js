@@ -733,7 +733,16 @@ async function mainLoop() {
   await new Promise(r => setTimeout(r, 2000));
 
   let cycle = 0;
-  const maxCycles = process.env.MAX_CYCLES ? parseInt(process.env.MAX_CYCLES) : parseInt(24 / 1); // 24 hours worth
+  const configuredMaxCycles = Number.parseInt(String(process.env.MAX_CYCLES || ''), 10);
+  const maxCycles = Number.isFinite(configuredMaxCycles) && configuredMaxCycles > 0
+    ? configuredMaxCycles
+    : Number.POSITIVE_INFINITY;
+
+  if (Number.isFinite(maxCycles)) {
+    console.log(`⏱️ Loop mode: bounded (${maxCycles} cycles)`);
+  } else {
+    console.log('♾️ Loop mode: continuous (no max cycle limit)');
+  }
 
   while (cycle < maxCycles) {
     cycle++;
