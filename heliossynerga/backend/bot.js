@@ -24,13 +24,13 @@ const HELIOS_PROJECT_ID = Number(process.env.COLOSSEUM_PROJECT_ID || 621);
 const HELIOS_PROJECT_NAME = 'HeliosSynerga';
 const HELIOS_PROJECT_URL = `https://colosseum.com/agent-hackathon/projects/${HELIOS_PROJECT_NAME.toLowerCase()}`;
 const HELIOS_STABLE_DEMO_URL = stripTrailingSlash(
-  process.env.HELIOS_STABLE_DEMO_URL || process.env.RAILWAY_PUBLIC_URL || 'https://heliossynerga-production.up.railway.app'
+  sanitizeConfiguredUrl(process.env.HELIOS_STABLE_DEMO_URL || process.env.RAILWAY_PUBLIC_URL) || 'https://heliossynerga-production.up.railway.app'
 );
 const HELIOS_PRO_DESCRIPTION = 'HeliosSynerga is an autonomous Solana trading system that executes disciplined BTC/SOL strategy cycles with risk controls, continuous telemetry, and transparent operational reporting. It is designed for reliable 24/7 decision support and measurable execution quality in live market conditions. Colosseum Project ID: 621.';
 const VOTES_REFRESH_TTL_MS = Number(process.env.VOTES_REFRESH_TTL_MS || 45000);
-const EXPLICIT_LIVE_APP_LINK = String(
+const EXPLICIT_LIVE_APP_LINK = sanitizeConfiguredUrl(
   process.env.LIVE_APP_LINK || process.env.LIVE_DEMO_URL || process.env.RAILWAY_PUBLIC_URL || ''
-).trim();
+);
 const SKILL_FILE_CANDIDATES = (
   process.env.COLOSSEUM_SKILL_FILE_PATHS
     ? process.env.COLOSSEUM_SKILL_FILE_PATHS.split(',').map((value) => value.trim()).filter(Boolean)
@@ -75,6 +75,25 @@ function toFiniteNumber(value) {
 
 function stripTrailingSlash(value = '') {
   return String(value || '').trim().replace(/\/+$/, '');
+}
+
+function sanitizeConfiguredUrl(value = '') {
+  const trimmed = stripTrailingSlash(value);
+  const lower = trimmed.toLowerCase();
+
+  if (!trimmed) {
+    return '';
+  }
+
+  if (
+    lower.includes('your-live-demo-url') ||
+    lower.includes('your-railway-service.up.railway.app') ||
+    lower.includes('literate-adventure-97vxgq6rjjvp379v4-4000.app.github.dev')
+  ) {
+    return '';
+  }
+
+  return trimmed;
 }
 
 function resolveLiveAppLinkForPort(port) {
